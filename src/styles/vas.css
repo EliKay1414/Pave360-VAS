@@ -1,0 +1,204 @@
+/* Pave360 VAS Styling */
+
+/* Pave360 VAS Auth / Telemetry Styling */
+.auth-light-body {
+  color: #0f172a;
+  min-height: 100vh;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #f3f6fa;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.auth-light-grid-pattern {
+  pointer-events: none;
+  opacity: 0.65;
+  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+  background-size: 24px 24px;
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: radial-gradient(80% 70%, #000 50%, transparent 100%);
+  mask-image: radial-gradient(80% 70%, #000 50%, transparent 100%);
+}
+
+.telemetry-chassis-light {
+  background-color: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 45px -12px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+@media (min-width: 1024px) {
+  .telemetry-chassis-light {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.telemetry-left-light {
+  background: linear-gradient(#f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2.25rem;
+  display: flex;
+  position: relative;
+}
+
+@media (min-width: 1024px) {
+  .telemetry-left-light {
+    border-bottom: none;
+    border-right: 1px solid #e2e8f0;
+    padding: 2.75rem;
+  }
+}
+
+.telemetry-right-light {
+  background-color: #fff;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2.25rem;
+  display: flex;
+}
+
+@media (min-width: 1024px) {
+  .telemetry-right-light {
+    padding: 2.75rem;
+  }
+}
+
+.telemetry-input-light {
+  color: #0f172a;
+  background-color: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  width: 100%;
+  padding: 0.65rem 0.875rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: all 0.15s ease-in-out;
+}
+
+.telemetry-input-light:focus {
+  border-color: #01b8ec;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(1, 184, 236, 0.15);
+}
+
+.telemetry-input-light::placeholder {
+  color: #94a3b8;
+}
+
+.telemetry-btn-primary-light {
+  cursor: pointer;
+  border: none;
+  border-radius: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.15s ease-in-out;
+  display: flex;
+  box-shadow: 0 4px 12px rgba(1, 27, 51, 0.18);
+  color: #fff !important;
+  background-color: #011b33 !important;
+}
+
+.telemetry-btn-primary-light:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(1, 27, 51, 0.25);
+  background-color: #072445 !important;
+}
+
+.telemetry-btn-primary-light:active {
+  transform: translateY(0);
+  background-color: #011426 !important;
+}
+
+.telemetry-btn-primary-light:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Aurora Mesh Global Background */
+.aurora-admin-bg {
+  background-color: #f7f7f7;
+  background-image:
+    radial-gradient(circle at 10% 8%, rgba(91, 124, 255, 0.14) 0%, transparent 36%),
+    radial-gradient(circle at 90% 12%, rgba(52, 203, 176, 0.12) 0%, transparent 32%),
+    radial-gradient(circle at 50% 60%, rgba(232, 237, 248, 0.5) 0%, transparent 50%),
+    linear-gradient(180deg, #E8EDF8 0%, #D5DDF0 38%, #F8FAFF 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.dark .aurora-admin-bg,
+html.dark .aurora-admin-bg {
+  background-color: #0a0a0a;
+  background-image:
+    radial-gradient(circle at 10% 8%, rgba(91, 124, 255, 0.12) 0%, transparent 36%),
+    radial-gradient(circle at 90% 12%, rgba(52, 203, 176, 0.08) 0%, transparent 32%),
+    linear-gradient(180deg, #0D1220 0%, #101626 44%, #090D16 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* Frosted Glass Tokens */
+.aurora-glass-surface {
+  background-color: rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+}
+
+.dark .aurora-glass-surface,
+html.dark .aurora-glass-surface {
+  background-color: rgba(14, 20, 32, 0.82);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Custom VAS Operator Sidebar Scrollbar */
+.vas-sidebar-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #4b627a #011b33;
+}
+
+.vas-sidebar-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.vas-sidebar-scroll::-webkit-scrollbar-track {
+  background: #011b33;
+}
+
+.vas-sidebar-scroll::-webkit-scrollbar-thumb {
+  background-color: #3b5066;
+  border-radius: 4px;
+  border: 2px solid #011b33;
+  transition: background-color 0.15s ease;
+}
+
+.vas-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b;
+}
+
+.vas-sidebar-scroll::-webkit-scrollbar-thumb:active {
+  background-color: #01b8ec;
+}
+
+

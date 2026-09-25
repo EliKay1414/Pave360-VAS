@@ -1,0 +1,374 @@
+/* ========================================================
+   STANDARD BOLD & VIBRANT SCROLLBAR SYSTEM
+   (VS Code / Modern IDE Specification)
+   Consistent across Viewport, Modals, Drawers, Tables, & Forms
+   ======================================================== */
+
+/* Global Scrollbar for All Scrollable Containers (Modals, Drawers, Tables, Code) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #edf2f7;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #edf2f7;
+  border-radius: 6px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #94a3b8;
+  border-radius: 6px;
+  border: 2px solid #edf2f7;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #475569;
+  border-color: #e2e8f0;
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background-color: #01b8ec;
+  border-color: #edf2f7;
+}
+
+*::-webkit-scrollbar-corner {
+  background: #edf2f7;
+}
+
+/* Dark Mode Global Scrollbar */
+.dark * {
+  scrollbar-color: #475569 #0f172a;
+}
+
+.dark *::-webkit-scrollbar-track {
+  background: #0f172a;
+  border-radius: 6px;
+}
+
+.dark *::-webkit-scrollbar-thumb {
+  background-color: #475569;
+  border-radius: 6px;
+  border: 2px solid #0f172a;
+}
+
+.dark *::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b;
+  border-color: #0f172a;
+}
+
+.dark *::-webkit-scrollbar-thumb:active {
+  background-color: #01b8ec;
+  border-color: #0f172a;
+}
+
+.dark *::-webkit-scrollbar-corner {
+  background: #0f172a;
+}
+
+/* ========================================================
+   MAIN APPLICATION VIEWPORT SCROLLBAR (.app-scroll)
+   VS Code Standard Viewport: 12px wide, distinct gutter & active glow
+   ======================================================== */
+.app-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  scrollbar-color: #94a3b8 #e2e8f0;
+}
+
+.app-scroll::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.app-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-left: 1px solid #e2e8f0;
+}
+
+.app-scroll::-webkit-scrollbar-thumb {
+  background-color: #94a3b8;
+  border-radius: 6px;
+  border: 2.5px solid #f1f5f9;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.app-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #475569;
+  border-color: #f1f5f9;
+}
+
+.app-scroll::-webkit-scrollbar-thumb:active {
+  background-color: #01b8ec;
+  border-color: #f1f5f9;
+}
+
+/* Dark Mode Viewport */
+.dark .app-scroll {
+  scrollbar-color: #475569 #0b1324;
+}
+
+.dark .app-scroll::-webkit-scrollbar-track {
+  background: #0b1324;
+  border-left: 1px solid #1e293b;
+}
+
+.dark .app-scroll::-webkit-scrollbar-thumb {
+  background-color: #475569;
+  border-radius: 6px;
+  border: 2.5px solid #0b1324;
+}
+
+.dark .app-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b;
+}
+
+.dark .app-scroll::-webkit-scrollbar-thumb:active {
+  background-color: #01b8ec;
+}
+
+/* Pave Scrollbar Utility */
+.pave-scrollbar {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #edf2f7;
+}
+
+.pave-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.pave-scrollbar::-webkit-scrollbar-track {
+  background: #edf2f7;
+}
+
+.pave-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #94a3b8;
+  border-radius: 6px;
+  border: 2px solid #edf2f7;
+}
+
+.pave-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #475569;
+}
+
+.pave-scrollbar::-webkit-scrollbar-thumb:active {
+  background-color: #01b8ec;
+}
+
+/* Surfaces */
+.surface-page {
+  background-color: var(--surface-page);
+  color: var(--text-primary);
+}
+.surface-chrome {
+  background-color: var(--surface-chrome);
+  border-color: var(--surface-border);
+}
+.surface-card {
+  background-color: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-card);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.surface-card:hover {
+  border-color: rgba(100, 116, 139, 0.28);
+}
+.dark .surface-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.surface-muted {
+  background-color: var(--surface-muted);
+}
+
+.section-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.pill-field {
+  height: 2.5rem;
+  width: 100%;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background-color: var(--surface-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  box-shadow: none;
+  outline: none;
+}
+.pill-field:focus,
+.pill-field:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring-focus);
+}
+
+/* Banners */
+.banner-success {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-card);
+  background-color: #ecfdf5;
+  border: 1px solid #d1fae5;
+  color: #047857;
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.dark .banner-success {
+  background-color: rgb(2 44 34 / 0.2);
+  border-color: #065f46;
+  color: #34d399;
+}
+.banner-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-card);
+  background-color: #fff1f2;
+  border: 1px solid #ffe4e6;
+  color: #be123c;
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.dark .banner-error {
+  background-color: rgb(136 19 55 / 0.2);
+  border-color: #9f1239;
+  color: #fb7185;
+}
+
+/* Status Badges */
+.status-success {
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #d1fae5;
+}
+.dark .status-success {
+  background-color: rgb(2 44 34 / 0.2);
+  color: #34d399;
+  border-color: #065f46;
+}
+.status-warning {
+  background-color: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+.dark .status-warning {
+  background-color: rgb(69 26 3 / 0.2);
+  color: #fbbf24;
+  border-color: #92400e;
+}
+.status-error {
+  background-color: #fff1f2;
+  color: #be123c;
+  border: 1px solid #ffe4e6;
+}
+.dark .status-error {
+  background-color: rgb(136 19 55 / 0.2);
+  color: #fb7185;
+  border-color: #9f1239;
+}
+.status-info {
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+.dark .status-info {
+  background-color: rgb(255 255 255 / 0.05);
+  color: #cbd5e1;
+  border-color: rgb(255 255 255 / 0.1);
+}
+
+.notif-card {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  gap: 0.875rem;
+  text-align: left;
+  border-radius: 0.875rem;
+  border: 1px solid var(--surface-line);
+  background-color: color-mix(in srgb, var(--surface-muted) 70%, var(--surface-card));
+  padding: 1rem 1.125rem;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.notif-card:hover {
+  background-color: var(--surface-muted);
+}
+.notif-card[data-unread="true"] {
+  box-shadow: 0 0 0 1px color-mix(in srgb, #10b981 20%, transparent);
+}
+
+.panel-dialog {
+  background-color: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-card);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* Animations */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fade-in { animation: fade-in 0.16s ease-out; }
+.animate-scale-in { animation: scale-in 0.18s ease-out; }
+
+/* Dark mode form controls */
+.dark .bg-slate-50 {
+  background-color: var(--surface-page) !important;
+}
+.dark .bg-white {
+  background-color: #111820 !important;
+}
+.dark .border-slate-200,
+.dark .border-slate-100 {
+  border-color: var(--surface-border) !important;
+}
+.dark .text-slate-900,
+.dark .text-slate-800 {
+  color: var(--text-primary) !important;
+}
+.dark .text-slate-700 {
+  color: #e2e8f0 !important;
+}
+.dark .text-slate-600 {
+  color: var(--text-secondary) !important;
+}
+.dark .text-slate-500,
+.dark .text-slate-400 {
+  color: var(--text-muted) !important;
+}
+.dark input, .dark select, .dark textarea {
+  background-color: var(--surface-muted) !important;
+  border-color: var(--surface-border) !important;
+  color: var(--text-primary) !important;
+}
+.dark .bg-slate-100 {
+  background-color: var(--surface-muted) !important;
+}
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-100:hover {
+  background-color: rgb(255 255 255 / 0.04) !important;
+}

@@ -1,0 +1,149 @@
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --font-family: "Jost", sans-serif;
+  --font-sans: "Jost", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Standard shadcn UI & semantic tokens */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Pave360 VAS Brand tokens */
+  --color-brand: var(--brand-primary);
+  --color-brand-hover: var(--brand-primary-hover);
+  --color-brand-light: var(--brand-primary-light);
+  --color-pave-teal: var(--brand-primary);
+  --color-pave-teal-hover: var(--brand-primary-hover);
+  --color-pave-darkteal: #0f172a;
+  --color-pave-accent: var(--brand-primary);
+  --color-pave-mint: var(--brand-primary);
+
+  /* Surfaces */
+  --color-page: var(--surface-page);
+  --color-chrome: var(--surface-chrome);
+  --color-muted-ctl: var(--surface-muted);
+  --color-line: var(--surface-line);
+  --color-hairline: var(--surface-border);
+}
+
+:root {
+  --font-family: "Jost", sans-serif;
+  --brand-primary: #1ec94d;
+  --brand-primary-hover: #16a34a;
+  --brand-primary-light: rgba(30, 201, 77, 0.12);
+  --brand-primary-ring: rgba(30, 201, 77, 0.35);
+
+  /* Surfaces */
+  --surface-page: #f8fafc;
+  --surface-card: #ffffff;
+  --surface-chrome: #ffffff;
+  --surface-muted: #f8fafc;
+  --surface-line: #f1f5f9;
+  --surface-border: #e2e8f0;
+  --text-primary: #011c39;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+
+  /* Standard shadcn UI variables (Light) */
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #1ec94d;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #1ec94d;
+  --radius: 0.75rem;
+
+  --ring-focus: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+  --radius-card: 1rem;
+  --radius-pill: 9999px;
+}
+
+.dark {
+  /* Surfaces */
+  --surface-page: #0b0f17;
+  --surface-card: #111820;
+  --surface-chrome: #0f172a;
+  --surface-muted: #16202c;
+  --surface-line: #1e293b;
+  --surface-border: rgba(255, 255, 255, 0.08);
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  /* Standard shadcn UI variables (Dark) */
+  --background: #0b0f17;
+  --foreground: #f8fafc;
+  --card: #111820;
+  --card-foreground: #f8fafc;
+  --popover: #111820;
+  --popover-foreground: #f8fafc;
+  --primary: #1ec94d;
+  --primary-foreground: #022013;
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
+  --muted: #16202c;
+  --muted-foreground: #94a3b8;
+  --accent: #1e293b;
+  --accent-foreground: #f8fafc;
+  --destructive: #7f1d1d;
+  --destructive-foreground: #f8fafc;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.15);
+  --ring: #1ec94d;
+}
+
+/* Dynamic Global Theme Synchronization */
+.bg-brand {
+  background-color: var(--brand-primary) !important;
+}
+
+.hover\:bg-brand-hover:hover {
+  background-color: var(--brand-primary-hover) !important;
+}
+
+.text-brand {
+  color: var(--brand-primary) !important;
+}
+
+.border-brand {
+  border-color: var(--brand-primary) !important;
+}
+
+.fill-brand {
+  fill: var(--brand-primary) !important;
+}
+
+.stroke-brand {
+  stroke: var(--brand-primary) !important;
+}
