@@ -12,6 +12,7 @@ import {
 import type { AppDispatch } from "../store"
 import { env } from "../config/env"
 import type { User } from "../store/types"
+import { recordVasActivity } from "../lib/vasActivityStore"
 
 export type LoginResult =
   | { ok: true; requiresOtp?: false }
@@ -75,6 +76,12 @@ export async function loginOperator(email: string, password: string): Promise<Lo
     store.dispatch(setSignedIn(true))
     store.dispatch(switchPersona("ADMIN"))
     store.dispatch(setOtpPending({ pending: false, email: null }))
+    recordVasActivity({
+      action: "auth.login",
+      entity: "User",
+      summary: `User ${trimmed} signed in`,
+      user: trimmed,
+    })
     return { ok: true }
   }
 
@@ -91,6 +98,12 @@ export async function loginOperator(email: string, password: string): Promise<Lo
     store.dispatch(setSignedIn(true))
     store.dispatch(switchPersona("ADMIN"))
     store.dispatch(setOtpPending({ pending: false, email: null }))
+    recordVasActivity({
+      action: "auth.login",
+      entity: "User",
+      summary: `User ${trimmed} signed in`,
+      user: trimmed,
+    })
     return { ok: true }
   } catch {
     // When offline or testing before backend API integration, log in with dynamic credentials
@@ -98,6 +111,12 @@ export async function loginOperator(email: string, password: string): Promise<Lo
     store.dispatch(setSignedIn(true))
     store.dispatch(switchPersona("ADMIN"))
     store.dispatch(setOtpPending({ pending: false, email: null }))
+    recordVasActivity({
+      action: "auth.login",
+      entity: "User",
+      summary: `User ${trimmed} signed in`,
+      user: trimmed,
+    })
     return { ok: true }
   }
 }
@@ -154,6 +173,14 @@ export function registerOperator(details: { name: string; email: string; company
 }
 
 export async function logoutOperator() {
+  const currentEmail = store.getState().auth?.user?.email || "admin@pave360.com"
+  recordVasActivity({
+    action: "auth.logout",
+    entity: "User",
+    summary: `User signed out`,
+    user: currentEmail,
+  })
+
   if (env.isLive) {
     await pave360Client.logout().catch(() => undefined)
   }

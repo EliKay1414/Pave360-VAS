@@ -7,6 +7,7 @@ import {
   UserDetailsView,
   INITIAL_USERS,
 } from "./users"
+import { recordVasActivity } from "../../shared/lib/vasActivityStore"
 
 export function UsersView() {
   const [users, setUsers] = useState<UserItem[]>(INITIAL_USERS)
@@ -37,6 +38,11 @@ export function UsersView() {
           if (viewingUser?.id === userId) {
             setViewingUser(updated)
           }
+          recordVasActivity({
+            action: "user.status_toggle",
+            entity: "User",
+            summary: `User ${u.email} status changed to ${nextStatus}`,
+          })
           return updated
         }
         return u
@@ -71,6 +77,11 @@ export function UsersView() {
           return u
         })
       )
+      recordVasActivity({
+        action: "user.update",
+        entity: "User",
+        summary: `User ${formData.email} details updated`,
+      })
     } else {
       const newUser: UserItem = {
         id: `USR-${Date.now().toString().slice(-3)}`,
@@ -85,6 +96,11 @@ export function UsersView() {
         createdAt: new Date().toISOString().replace("T", " ").slice(0, 16),
       }
       setUsers((prev) => [newUser, ...prev])
+      recordVasActivity({
+        action: "user.create",
+        entity: "User",
+        summary: `New user ${formData.email} registered (${formData.roles.join(", ") || "User"})`,
+      })
     }
     setIsModalOpen(false)
   }

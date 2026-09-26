@@ -1,5 +1,6 @@
 import * as React from "react"
 import { X } from "lucide-react"
+import { recordVasActivity } from "../../shared/lib/vasActivityStore"
 
 export interface Connection {
   id: string
@@ -217,6 +218,11 @@ export function ConnectionsView() {
         status: "Connected",
       }
       saveConnections([...connections, newConn])
+      recordVasActivity({
+        action: "connection.create",
+        entity: "Connection",
+        summary: `Bind session '${formData.name.trim()}' created (${formData.protocol} ${formData.bindType})`,
+      })
     } else if (modalMode === "edit" && currentConnection) {
       const updated = connections.map((c) =>
         c.id === currentConnection.id
@@ -245,6 +251,11 @@ export function ConnectionsView() {
           : c
       )
       saveConnections(updated)
+      recordVasActivity({
+        action: "connection.update",
+        entity: "Connection",
+        summary: `Bind session '${formData.name.trim()}' parameters updated`,
+      })
     }
 
     handleCloseModal()
@@ -252,8 +263,14 @@ export function ConnectionsView() {
 
   // Delete Connection
   const handleDeleteConnection = (id: string) => {
+    const target = connections.find((c) => c.id === id)
     const updated = connections.filter((c) => c.id !== id)
     saveConnections(updated)
+    recordVasActivity({
+      action: "connection.delete",
+      entity: "Connection",
+      summary: `Bind session '${target?.name || id}' removed`,
+    })
     if (isModalOpen) handleCloseModal()
     if (deleteConfirmTarget) setDeleteConfirmTarget(null)
   }

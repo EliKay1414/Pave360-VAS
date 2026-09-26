@@ -7,6 +7,7 @@ import {
   INITIAL_ALERT_RULES,
   INITIAL_ALERT_EVENTS,
 } from "./alarms"
+import { recordVasActivity } from "../../shared/lib/vasActivityStore"
 
 export function AlarmsView() {
   const [currentFilter, setCurrentFilter] = useState<AlertFilter>("all")
@@ -21,15 +22,27 @@ export function AlarmsView() {
   }, [events, currentFilter])
 
   const handleAcknowledge = (id: string) => {
+    const target = events.find((e) => e.id === id)
     setEvents((prev) =>
       prev.map((e) => (e.id === id ? { ...e, status: "Acknowledged" } : e))
     )
+    recordVasActivity({
+      action: "alarm.acknowledge",
+      entity: "Alarm",
+      summary: `Alert '${target?.title || id}' acknowledged by operator`,
+    })
   }
 
   const handleResolve = (id: string) => {
+    const target = events.find((e) => e.id === id)
     setEvents((prev) =>
       prev.map((e) => (e.id === id ? { ...e, status: "Resolved" } : e))
     )
+    recordVasActivity({
+      action: "alarm.resolve",
+      entity: "Alarm",
+      summary: `Alert '${target?.title || id}' marked as resolved`,
+    })
   }
 
   return (

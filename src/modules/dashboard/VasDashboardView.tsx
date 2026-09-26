@@ -136,12 +136,15 @@ const DEFAULT_VAS_DATA: VasMetricData = {
   ],
 }
 
+import { useVasTelemetry } from "../../shared/lib/vasActivityStore"
+
 interface VasDashboardViewProps {
   initialData?: VasMetricData
 }
 
 export function VasDashboardView({ initialData }: VasDashboardViewProps) {
-  const data = initialData || DEFAULT_VAS_DATA
+  const dynamicTelemetry = useVasTelemetry()
+  const data = initialData || dynamicTelemetry
 
   return (
     <div className="space-y-5 font-sans select-none">

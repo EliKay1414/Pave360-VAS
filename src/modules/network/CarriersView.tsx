@@ -1,5 +1,6 @@
 import * as React from "react"
 import { X, CheckCircle2 } from "lucide-react"
+import { recordVasActivity } from "../../shared/lib/vasActivityStore"
 
 export interface Carrier {
   id: string
@@ -164,6 +165,11 @@ export function CarriersView() {
         notes: formData.notes.trim(),
       }
       saveCarriers([...carriers, newCarrier])
+      recordVasActivity({
+        action: "carrier.create",
+        entity: "Carrier",
+        summary: `Carrier interconnect '${formData.name.trim()}' added (${formData.protocol})`,
+      })
     } else if (modalMode === "edit" && currentCarrier) {
       const updated = carriers.map((c) =>
         c.id === currentCarrier.id
@@ -186,6 +192,11 @@ export function CarriersView() {
           : c
       )
       saveCarriers(updated)
+      recordVasActivity({
+        action: "carrier.update",
+        entity: "Carrier",
+        summary: `Carrier interconnect '${formData.name.trim()}' updated (${formData.status})`,
+      })
     }
 
     handleCloseModal()
@@ -193,8 +204,14 @@ export function CarriersView() {
 
   // Delete directly
   const handleDeleteCarrier = (id: string) => {
+    const target = carriers.find((c) => c.id === id)
     const updated = carriers.filter((c) => c.id !== id)
     saveCarriers(updated)
+    recordVasActivity({
+      action: "carrier.delete",
+      entity: "Carrier",
+      summary: `Carrier interconnect '${target?.name || id}' removed`,
+    })
     if (isModalOpen) handleCloseModal()
     if (deleteConfirmTarget) setDeleteConfirmTarget(null)
   }

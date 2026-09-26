@@ -9,6 +9,8 @@ import {
   type ApiKeyRecord,
 } from "./api-keys"
 
+import { recordVasActivity } from "../../shared/lib/vasActivityStore"
+
 // Re-export types for backward compatibility
 export * from "./api-keys/types"
 
@@ -56,14 +58,25 @@ export function ApiKeysView() {
       secret: secretKey,
       name: newKey.name,
     })
+    recordVasActivity({
+      action: "apikey.create",
+      entity: "API Key",
+      summary: `API Key '${newKey.name}' generated (${newKey.prefix}...)`,
+    })
   }
 
   // Handle Revoke API Key confirmation
   const handleRevokeConfirm = (keyId: string) => {
+    const targetKey = apiKeys.find((k) => k.id === keyId)
     const updated = apiKeys.map((k) =>
-      k.id === keyId ? { ...k, status: "Revoked" } : k
+      k.id === keyId ? { ...k, status: "Revoked" as const } : k
     )
     saveKeys(updated)
+    recordVasActivity({
+      action: "apikey.revoke",
+      entity: "API Key",
+      summary: `API Key '${targetKey?.name || keyId}' revoked`,
+    })
     setKeyToRevoke(null)
   }
 

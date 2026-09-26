@@ -6,6 +6,7 @@ import {
   SettingModal,
   INITIAL_SETTINGS,
 } from "./system"
+import { recordVasActivity } from "../../shared/lib/vasActivityStore"
 
 export function SettingsView() {
   const [settings, setSettings] = useState<SettingItem[]>(INITIAL_SETTINGS)
@@ -38,6 +39,11 @@ export function SettingsView() {
             : s
         )
       )
+      recordVasActivity({
+        action: "setting.update",
+        entity: "Setting",
+        summary: `Platform parameter '${editingSetting.key}' updated`,
+      })
     } else {
       const newSetting: SettingItem = {
         key: data.key,
@@ -47,6 +53,11 @@ export function SettingsView() {
         isMasked: data.isMasked,
       }
       setSettings((prev) => [...prev, newSetting])
+      recordVasActivity({
+        action: "setting.create",
+        entity: "Setting",
+        summary: `New platform parameter '${data.key}' added`,
+      })
     }
     setIsModalOpen(false)
   }

@@ -7,6 +7,8 @@ import {
   type WebhookRecord,
 } from "./webhooks"
 
+import { recordVasActivity } from "../../shared/lib/vasActivityStore"
+
 // Re-export types for backward compatibility
 export * from "./webhooks/types"
 
@@ -44,6 +46,11 @@ export function WebhooksView() {
   const handleCreateWebhook = (newWebhook: WebhookRecord) => {
     const updated = [newWebhook, ...webhooks]
     saveWebhooks(updated)
+    recordVasActivity({
+      action: "webhook.create",
+      entity: "Webhook",
+      summary: `Webhook created for '${newWebhook.url}' (${newWebhook.event})`,
+    })
     setIsCreateOpen(false)
   }
 
@@ -51,6 +58,11 @@ export function WebhooksView() {
   const handleDeleteWebhook = (webhook: WebhookRecord) => {
     const updated = webhooks.filter((w) => w.id !== webhook.id)
     saveWebhooks(updated)
+    recordVasActivity({
+      action: "webhook.delete",
+      entity: "Webhook",
+      summary: `Webhook '${webhook.url}' deleted`,
+    })
   }
 
   return (

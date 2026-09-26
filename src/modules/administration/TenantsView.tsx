@@ -6,6 +6,7 @@ import {
   TenantModal,
   INITIAL_TENANTS,
 } from "./tenants"
+import { recordVasActivity } from "../../shared/lib/vasActivityStore"
 
 export function TenantsView() {
   const [tenants, setTenants] = useState<Tenant[]>(INITIAL_TENANTS)
@@ -42,6 +43,11 @@ export function TenantsView() {
             : t
         )
       )
+      recordVasActivity({
+        action: "tenant.update",
+        entity: "Tenant",
+        summary: `Tenant "${formData.company}" updated`,
+      })
     } else {
       const newTenant: Tenant = {
         id: `TEN-${Date.now().toString().slice(-3)}`,
@@ -60,6 +66,11 @@ export function TenantsView() {
         created: new Date().toISOString().split("T")[0],
       }
       setTenants((prev) => [newTenant, ...prev])
+      recordVasActivity({
+        action: "tenant.create",
+        entity: "Tenant",
+        summary: `New tenant "${formData.company}" created`,
+      })
     }
     setIsModalOpen(false)
   }

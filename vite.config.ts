@@ -18,9 +18,42 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  optimizeDeps: {
+    include: [
+      "react",
+      "react/jsx-runtime",
+      "react-dom",
+      "react-dom/client",
+      "@tanstack/react-router",
+      "@tanstack/react-query",
+      "lucide-react",
+      "recharts",
+      "@reduxjs/toolkit",
+      "react-redux",
+      "react-hook-form",
+      "sonner",
+      "tailwind-merge",
+    ],
+    esbuildOptions: {
+      target: "esnext",
+    },
+  },
   server: {
     port: 5173,
     strictPort: false,
+    host: true,
+    warmup: {
+      clientFiles: [
+        "./src/main.tsx",
+        "./src/routes/__root.tsx",
+        "./src/routes/_dashboard.tsx",
+        "./src/routes/_dashboard/dashboard.tsx",
+        "./src/modules/dashboard/VasDashboardView.tsx",
+        "./src/modules/layout/VasLayoutView.tsx",
+        "./src/modules/layout/Header.tsx",
+        "./src/modules/layout/SidebarContent.tsx",
+      ],
+    },
   },
   build: {
     chunkSizeWarningLimit: 600,
