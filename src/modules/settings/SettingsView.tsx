@@ -8,10 +8,32 @@ import {
 } from "./system"
 import { recordVasActivity } from "../../shared/lib/vasActivityStore"
 
+const STORAGE_KEY = "pave360_vas_settings_data"
+
 export function SettingsView() {
-  const [settings, setSettings] = useState<SettingItem[]>(INITIAL_SETTINGS)
+  const [settings, setSettings] = useState<SettingItem[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {
+      /* ignore */
+    }
+    return INITIAL_SETTINGS
+  })
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingSetting, setEditingSetting] = useState<SettingItem | null>(null)
+
+  const saveSettings = (updated: SettingItem[]) => {
+    setSettings(updated)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    } catch {
+      /* ignore */
+    }
+  }
 
   const handleOpenAdd = () => {
     setEditingSetting(null)
@@ -26,19 +48,18 @@ export function SettingsView() {
   const handleSaveSetting = (data: SettingFormData) => {
     const nowIso = new Date().toISOString().replace(/\.\d{3}/, "")
     if (editingSetting) {
-      setSettings((prev) =>
-        prev.map((s) =>
-          s.key === editingSetting.key
-            ? {
-                ...s,
-                value: data.value,
-                description: data.description,
-                updated: nowIso,
-                isMasked: data.isMasked,
-              }
-            : s
-        )
+      const updatedSettings = settings.map((s) =>
+        s.key === editingSetting.key
+          ? {
+              ...s,
+              value: data.value,
+              description: data.description,
+              updated: nowIso,
+              isMasked: data.isMasked,
+            }
+          : s
       )
+      saveSettings(updatedSettings)
       recordVasActivity({
         action: "setting.update",
         entity: "Setting",
@@ -52,7 +73,8 @@ export function SettingsView() {
         updated: nowIso,
         isMasked: data.isMasked,
       }
-      setSettings((prev) => [...prev, newSetting])
+      const updatedSettings = [...settings, newSetting]
+      saveSettings(updatedSettings)
       recordVasActivity({
         action: "setting.create",
         entity: "Setting",

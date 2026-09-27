@@ -8,9 +8,31 @@ import {
 } from "./roles"
 import { recordVasActivity } from "../../shared/lib/vasActivityStore"
 
+const STORAGE_KEY = "pave360_vas_roles_data"
+
 export function RolesPermissionsView() {
-  const [roles, setRoles] = useState<RoleItem[]>(INITIAL_ROLES)
+  const [roles, setRoles] = useState<RoleItem[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {
+      /* ignore */
+    }
+    return INITIAL_ROLES
+  })
   const [editingRole, setEditingRole] = useState<RoleItem | null>(null)
+
+  const saveRoles = (updated: RoleItem[]) => {
+    setRoles(updated)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    } catch {
+      /* ignore */
+    }
+  }
 
   const handleOpenEdit = (role: RoleItem) => {
     setEditingRole(role)
@@ -25,11 +47,10 @@ export function RolesPermissionsView() {
     updatedPermissions: string[]
   ) => {
     const targetRole = roles.find((r) => r.id === roleId)
-    setRoles((prev) =>
-      prev.map((r) =>
-        r.id === roleId ? { ...r, permissions: updatedPermissions } : r
-      )
+    const updatedRoles = roles.map((r) =>
+      r.id === roleId ? { ...r, permissions: updatedPermissions } : r
     )
+    saveRoles(updatedRoles)
     recordVasActivity({
       action: "role.update",
       entity: "Role",

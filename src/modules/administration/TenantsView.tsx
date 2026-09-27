@@ -8,10 +8,32 @@ import {
 } from "./tenants"
 import { recordVasActivity } from "../../shared/lib/vasActivityStore"
 
+const STORAGE_KEY = "pave360_vas_tenants_data"
+
 export function TenantsView() {
-  const [tenants, setTenants] = useState<Tenant[]>(INITIAL_TENANTS)
+  const [tenants, setTenants] = useState<Tenant[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {
+      /* ignore */
+    }
+    return INITIAL_TENANTS
+  })
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null)
+
+  const saveTenants = (updated: Tenant[]) => {
+    setTenants(updated)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    } catch {
+      /* ignore */
+    }
+  }
 
   const handleOpenCreate = () => {
     setEditingTenant(null)
@@ -25,24 +47,23 @@ export function TenantsView() {
 
   const handleSaveTenant = (formData: TenantFormData) => {
     if (editingTenant) {
-      setTenants((prev) =>
-        prev.map((t) =>
-          t.id === editingTenant.id
-            ? {
-                ...t,
-                company: formData.company,
-                slug: formData.slug || formData.company.toLowerCase().replace(/\s+/g, "-"),
-                status: formData.status,
-                contact: formData.contactEmail,
-                contactName: formData.contactName,
-                contactPhone: formData.contactPhone,
-                country: formData.country,
-                timeZone: formData.timeZone,
-                notes: formData.notes,
-              }
-            : t
-        )
+      const updated = tenants.map((t) =>
+        t.id === editingTenant.id
+          ? {
+              ...t,
+              company: formData.company,
+              slug: formData.slug || formData.company.toLowerCase().replace(/\s+/g, "-"),
+              status: formData.status,
+              contact: formData.contactEmail,
+              contactName: formData.contactName,
+              contactPhone: formData.contactPhone,
+              country: formData.country,
+              timeZone: formData.timeZone,
+              notes: formData.notes,
+            }
+          : t
       )
+      saveTenants(updated)
       recordVasActivity({
         action: "tenant.update",
         entity: "Tenant",
@@ -65,7 +86,8 @@ export function TenantsView() {
         usersCount: 0,
         created: new Date().toISOString().split("T")[0],
       }
-      setTenants((prev) => [newTenant, ...prev])
+      const updated = [newTenant, ...tenants]
+      saveTenants(updated)
       recordVasActivity({
         action: "tenant.create",
         entity: "Tenant",

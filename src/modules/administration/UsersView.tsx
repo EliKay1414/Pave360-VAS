@@ -9,11 +9,33 @@ import {
 } from "./users"
 import { recordVasActivity } from "../../shared/lib/vasActivityStore"
 
+const STORAGE_KEY = "pave360_vas_users_data"
+
 export function UsersView() {
-  const [users, setUsers] = useState<UserItem[]>(INITIAL_USERS)
+  const [users, setUsers] = useState<UserItem[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {
+      /* ignore */
+    }
+    return INITIAL_USERS
+  })
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<UserItem | null>(null)
   const [viewingUser, setViewingUser] = useState<UserItem | null>(null)
+
+  const saveUsers = (updated: UserItem[]) => {
+    setUsers(updated)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    } catch {
+      /* ignore */
+    }
+  }
 
   const handleOpenCreate = () => {
     setEditingUser(null)
@@ -30,24 +52,23 @@ export function UsersView() {
   }
 
   const handleToggleStatus = (userId: string) => {
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.id === userId) {
-          const nextStatus: UserStatus = u.status === "Active" ? "Suspended" : "Active"
-          const updated: UserItem = { ...u, status: nextStatus }
-          if (viewingUser?.id === userId) {
-            setViewingUser(updated)
-          }
-          recordVasActivity({
-            action: "user.status_toggle",
-            entity: "User",
-            summary: `User ${u.email} status changed to ${nextStatus}`,
-          })
-          return updated
+    const updatedUsers = users.map((u) => {
+      if (u.id === userId) {
+        const nextStatus: UserStatus = u.status === "Active" ? "Suspended" : "Active"
+        const updated: UserItem = { ...u, status: nextStatus }
+        if (viewingUser?.id === userId) {
+          setViewingUser(updated)
         }
-        return u
-      })
-    )
+        recordVasActivity({
+          action: "user.status_toggle",
+          entity: "User",
+          summary: `User ${u.email} status changed to ${nextStatus}`,
+        })
+        return updated
+      }
+      return u
+    })
+    saveUsers(updatedUsers)
   }
 
   const handleSaveUser = (formData: UserFormData) => {
@@ -56,27 +77,26 @@ export function UsersView() {
     const nextStatus: UserStatus = formData.isActive === false ? "Suspended" : "Active"
 
     if (editingUser) {
-      setUsers((prev) =>
-        prev.map((u) => {
-          if (u.id === editingUser.id) {
-            const updated: UserItem = {
-              ...u,
-              firstName: formData.firstName,
-              lastName: formData.lastName,
-              name: fullName || u.name,
-              email: formData.email,
-              tenant: tenantName,
-              roles: formData.roles.length > 0 ? formData.roles : ["Read Only"],
-              status: nextStatus,
-            }
-            if (viewingUser?.id === editingUser.id) {
-              setViewingUser(updated)
-            }
-            return updated
+      const updatedUsers = users.map((u) => {
+        if (u.id === editingUser.id) {
+          const updated: UserItem = {
+            ...u,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            name: fullName || u.name,
+            email: formData.email,
+            tenant: tenantName,
+            roles: formData.roles.length > 0 ? formData.roles : ["Read Only"],
+            status: nextStatus,
           }
-          return u
-        })
-      )
+          if (viewingUser?.id === editingUser.id) {
+            setViewingUser(updated)
+          }
+          return updated
+        }
+        return u
+      })
+      saveUsers(updatedUsers)
       recordVasActivity({
         action: "user.update",
         entity: "User",
@@ -95,7 +115,8 @@ export function UsersView() {
         lastLogin: "Never",
         createdAt: new Date().toISOString().replace("T", " ").slice(0, 16),
       }
-      setUsers((prev) => [newUser, ...prev])
+      const updatedUsers = [newUser, ...users]
+      saveUsers(updatedUsers)
       recordVasActivity({
         action: "user.create",
         entity: "User",

@@ -7,15 +7,34 @@ import {
   INITIAL_AUDIT_LOGS,
   DEFAULT_AUDIT_FILTERS,
   type AuditLogFilters,
+  type AuditLogRecord,
 } from "../audit"
+import { useVasTelemetry } from "../../shared/lib/vasActivityStore"
 
 const PAGE_SIZE = 50
 
 export function AuditLogsView() {
-  const [logs] = useState(INITIAL_AUDIT_LOGS)
+  const telemetry = useVasTelemetry()
   const [filters, setFilters] = useState<AuditLogFilters>(DEFAULT_AUDIT_FILTERS)
   const [appliedFilters, setAppliedFilters] = useState<AuditLogFilters>(DEFAULT_AUDIT_FILTERS)
   const [currentPage, setCurrentPage] = useState(1)
+
+  const logs = useMemo<AuditLogRecord[]>(() => {
+    const dynamicItems: AuditLogRecord[] = telemetry.recentAuditActivity.map((act) => ({
+      id: act.id,
+      timestamp: act.when.includes("Z") ? act.when : `${act.when}:00Z`,
+      action: act.action,
+      tenant: "Pave360",
+      actor: act.user,
+      entityType: act.entity,
+      entityId: act.id,
+      summary: act.summary,
+      ipAddress: "::ffff:127.0.0.1",
+    }))
+    const seen = new Set(dynamicItems.map((d) => d.id))
+    const initialWithoutDupes = INITIAL_AUDIT_LOGS.filter((i) => !seen.has(i.id))
+    return [...dynamicItems, ...initialWithoutDupes]
+  }, [telemetry.recentAuditActivity])
 
   const handleSearch = () => {
     setAppliedFilters(filters)
