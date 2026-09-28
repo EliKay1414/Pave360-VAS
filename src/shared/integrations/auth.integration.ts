@@ -113,6 +113,11 @@ export async function loginOperator(
     store.dispatch(switchPersona("ADMIN"))
     store.dispatch(setOtpPending({ pending: false, email: null }))
 
+    if (typeof window !== "undefined") {
+      localStorage.setItem("pave360_vas_authenticated", "true")
+      localStorage.setItem("pave360_vas_user", JSON.stringify(userProfile))
+    }
+
     recordVasActivity({
       action: "auth.login",
       entity: "User",
@@ -143,6 +148,10 @@ export async function loginOperator(
       store.dispatch(setSignedIn(true))
       store.dispatch(switchPersona("ADMIN"))
       store.dispatch(setOtpPending({ pending: false, email: null }))
+      if (typeof window !== "undefined") {
+        localStorage.setItem("pave360_vas_authenticated", "true")
+        localStorage.setItem("pave360_vas_user", JSON.stringify(operatorUser))
+      }
       return { ok: true }
     }
 
@@ -161,18 +170,32 @@ export async function checkAuthSession(): Promise<boolean> {
 
   try {
     const authUser = await vasClient.getCurrentUser()
-    if (!authUser || !authUser.id) return false
+    if (!authUser || !authUser.id) {
+      return store.getState().auth.signedIn
+    }
 
     const userProfile = mapVasUser(authUser)
     store.dispatch(setUser(userProfile))
     store.dispatch(setSignedIn(true))
     store.dispatch(switchPersona("ADMIN"))
+    if (typeof window !== "undefined") {
+      localStorage.setItem("pave360_vas_authenticated", "true")
+      localStorage.setItem("pave360_vas_user", JSON.stringify(userProfile))
+    }
     return true
   } catch {
-    // Session cookie missing or expired
-    if (env.isLive) {
-      store.dispatch(clearAuth())
+    // Preserve local session on background verification or network/CORS issues
+    const hasLocalSession =
+      store.getState().auth.signedIn ||
+      (typeof window !== "undefined" && localStorage.getItem("pave360_vas_authenticated") === "true")
+
+    if (hasLocalSession) {
+      if (!store.getState().auth.signedIn) {
+        store.dispatch(setSignedIn(true))
+      }
+      return true
     }
+
     return false
   }
 }
@@ -225,13 +248,18 @@ export async function logoutOperator() {
     user: currentEmail,
   })
 
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("pave360_vas_authenticated")
+    localStorage.removeItem("pave360_vas_user")
+  }
+
+  store.dispatch(clearAuth())
+
   try {
     await vasClient.logoutVas()
   } catch (err) {
     console.warn("VAS logout request completed with warning:", err)
   }
-
-  store.dispatch(clearAuth())
 }
 
 export async function changePasswordOperator(

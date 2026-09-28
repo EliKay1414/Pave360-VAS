@@ -4,7 +4,10 @@ import { VasLayoutView } from "../modules/layout/VasLayoutView"
 
 export const Route = createFileRoute("/_dashboard")({
   beforeLoad: () => {
-    if (!store.getState().auth.signedIn) {
+    const isAuth =
+      store.getState().auth.signedIn ||
+      (typeof window !== "undefined" && localStorage.getItem("pave360_vas_authenticated") === "true")
+    if (!isAuth) {
       throw redirect({ to: "/login" })
     }
   },

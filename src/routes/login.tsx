@@ -1,9 +1,18 @@
 import * as React from "react"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router"
+import { store } from "../shared/store"
 import { useForm } from "react-hook-form"
 import { useAuth } from "../shared/hooks/useAuth"
 
 export const Route = createFileRoute("/login")({
+  beforeLoad: () => {
+    const isAuth =
+      store.getState().auth.signedIn ||
+      (typeof window !== "undefined" && localStorage.getItem("pave360_vas_authenticated") === "true")
+    if (isAuth) {
+      throw redirect({ to: "/dashboard" })
+    }
+  },
   component: LoginPage,
 })
 
@@ -37,12 +46,8 @@ function LoginPage() {
     },
   })
 
-  React.useEffect(() => {
-    if (signedIn) {
-      switchPersona("ADMIN")
-      navigate({ to: "/dashboard" })
-    }
-  }, [signedIn, navigate, switchPersona])
+  // Auto-redirect is safely guarded by Route.beforeLoad before mounting
+  // so typing into the form never causes sudden navigation.
 
   const onLoginSubmit = async (data: LoginFormValues) => {
     setError("")

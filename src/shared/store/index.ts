@@ -13,9 +13,21 @@ const rootReducer = combineReducers({
 // Load persisted state from localStorage
 const loadPersistedState = () => {
   try {
-    const serialized = localStorage.getItem(STORAGE_KEY)
-    if (!serialized) return undefined
-    return JSON.parse(serialized)
+    const isAuthenticated = typeof window !== "undefined" && localStorage.getItem("pave360_vas_authenticated") === "true"
+    const savedUserRaw = typeof window !== "undefined" ? localStorage.getItem("pave360_vas_user") : null
+    const savedUser = savedUserRaw ? JSON.parse(savedUserRaw) : null
+
+    const serialized = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null
+    const state = serialized ? JSON.parse(serialized) : {}
+
+    if (isAuthenticated) {
+      state.auth = {
+        ...state.auth,
+        signedIn: true,
+        user: state.auth?.user?.email ? state.auth.user : savedUser || state.auth?.user,
+      }
+    }
+    return state
   } catch {
     return undefined
   }
