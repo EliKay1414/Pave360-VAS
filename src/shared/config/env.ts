@@ -5,7 +5,8 @@ export type AppMode = "sandbox" | "live"
 
 function readMode(): AppMode {
   const raw = (import.meta.env.VITE_APP_MODE as string | undefined)?.toLowerCase()
-  return raw === "live" ? "live" : "sandbox"
+  if (raw === "sandbox") return "sandbox"
+  return "live"
 }
 
 export const env = {

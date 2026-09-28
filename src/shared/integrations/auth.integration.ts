@@ -127,6 +127,8 @@ export async function loginOperator(
 
     if (apiErr.data?.detail && typeof apiErr.data.detail === "string") {
       errorMsg = apiErr.data.detail
+    } else if (errorMsg === "Failed to fetch" || errorMsg.toLowerCase().includes("network")) {
+      errorMsg = "Unable to reach https://vas.pave360.com. Please check server status and CORS configuration."
     }
 
     // Return real validation/auth errors
