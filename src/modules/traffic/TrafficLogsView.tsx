@@ -2,6 +2,7 @@ import * as React from "react"
 import { Search, RotateCw, X } from "lucide-react"
 import { MessageDetailView } from "./MessageDetailView"
 import { resolveMessageRecord } from "./messageData"
+import { useMessagingTraffic } from "../../shared/hooks/useMessagingTraffic"
 
 export interface MessageTrafficLog {
   id: string
@@ -366,7 +367,7 @@ const INITIAL_LOGS: MessageTrafficLog[] = [
 ]
 
 export function TrafficLogsView() {
-  const [logs] = React.useState<MessageTrafficLog[]>(() => {
+  const [cachedLogs] = React.useState<MessageTrafficLog[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
@@ -388,9 +389,17 @@ export function TrafficLogsView() {
   const [isRefreshing, setIsRefreshing] = React.useState(false)
   const [selectedMessage, setSelectedMessage] = React.useState<MessageTrafficLog | null>(null)
 
+  const { logs: liveLogs, isLive, refetch } = useMessagingTraffic({
+    status: statusFilter,
+    category: categoryFilter,
+    destination: submittedDestination || destinationFilter,
+  })
+
+  const logs = liveLogs && liveLogs.length > 0 ? liveLogs : cachedLogs
+
   // Direct reactive filter computation communicating with the table
   const filteredLogs = React.useMemo(() => {
-    return logs.filter((log) => {
+    return logs.filter((log: MessageTrafficLog) => {
       // 1. Status Filter Check
       if (statusFilter !== "All Statuses") {
         if (log.status.toLowerCase() !== statusFilter.toLowerCase()) {
@@ -422,11 +431,10 @@ export function TrafficLogsView() {
   }
 
   // Live Refresh handler
-  const handleLiveRefresh = () => {
+  const handleLiveRefresh = async () => {
     setIsRefreshing(true)
-    setTimeout(() => {
-      setIsRefreshing(false)
-    }, 450)
+    await refetch()
+    setIsRefreshing(false)
   }
 
   // Status Badge Renderer matching screenshots
@@ -482,7 +490,7 @@ export function TrafficLogsView() {
     const params = new URLSearchParams(window.location.search)
     const idParam = params.get("messageId") || params.get("id")
     if (idParam) {
-      const found = logs.find((l) => l.id === idParam)
+      const found = logs.find((l: MessageTrafficLog) => l.id === idParam)
       if (found) {
         setSelectedMessage(found)
       } else {
@@ -507,7 +515,7 @@ export function TrafficLogsView() {
       const params = new URLSearchParams(window.location.search)
       const idParam = params.get("messageId") || params.get("id")
       if (idParam) {
-        const found = logs.find((l) => l.id === idParam)
+        const found = logs.find((l: MessageTrafficLog) => l.id === idParam)
         setSelectedMessage(
           found || {
             id: idParam,
@@ -631,16 +639,29 @@ export function TrafficLogsView() {
           </button>
         </form>
 
-        {/* Right Side: Live Refresh Button */}
-        <button
-          type="button"
-          onClick={handleLiveRefresh}
-          disabled={isRefreshing}
-          className="h-10 px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-[13px] font-semibold rounded-lg shadow-xs transition-colors cursor-pointer inline-flex items-center gap-2 shrink-0 self-start lg:self-auto disabled:opacity-60"
-        >
-          <RotateCw className={`h-3.5 w-3.5 text-slate-600 ${isRefreshing ? "animate-spin" : ""}`} />
-          <span>Live Refresh</span>
-        </button>
+        {/* Right Side: Live Refresh Button & Status Badge */}
+        <div className="flex items-center gap-2 shrink-0 self-start lg:self-auto">
+          {isLive ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live Gateway
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-50 text-slate-600 border border-slate-200">
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+              Cache
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleLiveRefresh}
+            disabled={isRefreshing}
+            className="h-10 px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-[13px] font-semibold rounded-lg shadow-xs transition-colors cursor-pointer inline-flex items-center gap-2 disabled:opacity-60"
+          >
+            <RotateCw className={`h-3.5 w-3.5 text-slate-600 ${isRefreshing ? "animate-spin" : ""}`} />
+            <span>Live Refresh</span>
+          </button>
+        </div>
       </div>
 
       {/* 3. Traffic Logs Data Table Card */}
@@ -677,7 +698,7 @@ export function TrafficLogsView() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredLogs.length > 0 ? (
-                filteredLogs.map((log) => (
+                filteredLogs.map((log: MessageTrafficLog) => (
                   <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
                     {/* Message ID */}
                     <td className="px-6 py-4 whitespace-nowrap">

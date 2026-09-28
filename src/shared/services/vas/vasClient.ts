@@ -12,6 +12,22 @@ import type {
   AuthMessageResponse,
   ChangePasswordApiRequest,
   DashboardViewModel,
+  SendMessageRequest,
+  SendBulkMessageRequest,
+  BatchUploadAcceptedResponse,
+  BatchUploadJobResponse,
+  MessageQueryParams,
+  MessageResponseItem,
+  CarrierListItemViewModel,
+  CarrierFormViewModel,
+  ConnectionListItemViewModel,
+  ConnectionFormViewModel,
+  RouteListItemViewModel,
+  RouteFormViewModel,
+  RouteSimulationRequest,
+  RoutingSimulationResponse,
+  SmppServerStatusResponse,
+  QueueDashboardViewModel,
 } from "./types"
 
 export class VasClient extends Pave360Client {
@@ -109,62 +125,210 @@ export class VasClient extends Pave360Client {
     return this.getDashboard()
   }
 
-  // --- 2. Network & Infrastructure ---
-  getCarriers() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.network.carriers)
+  // --- 5. Carriers & Connections ---
+  getCarriers(): Promise<CarrierListItemViewModel[]> {
+    return this.vasRequest<CarrierListItemViewModel[]>(VAS_PATHS.network.carriers)
   }
 
-  createCarrier(payload: unknown) {
-    return this.vasRequest<VasApiResponse<unknown>>(VAS_PATHS.network.carriers, {
+  getCarrier(id: string): Promise<CarrierFormViewModel> {
+    return this.vasRequest<CarrierFormViewModel>(VAS_PATHS.network.carrier(id))
+  }
+
+  createCarrier(payload: CarrierFormViewModel): Promise<CarrierFormViewModel> {
+    return this.vasRequest<CarrierFormViewModel>(VAS_PATHS.network.carriers, {
       method: "POST",
       body: JSON.stringify(payload),
     })
   }
 
-  updateCarrier(id: string, payload: unknown) {
-    return this.vasRequest<VasApiResponse<unknown>>(VAS_PATHS.network.carrier(id), {
+  updateCarrier(id: string, payload: CarrierFormViewModel): Promise<CarrierFormViewModel> {
+    return this.vasRequest<CarrierFormViewModel>(VAS_PATHS.network.carrier(id), {
       method: "PUT",
       body: JSON.stringify(payload),
     })
   }
 
-  getConnections() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.network.connections)
-  }
-
-  toggleConnection(id: string) {
-    return this.vasRequest<VasApiResponse<unknown>>(VAS_PATHS.network.toggleConnection(id), {
-      method: "POST",
+  deleteCarrier(id: string): Promise<void> {
+    return this.vasRequest<void>(VAS_PATHS.network.carrier(id), {
+      method: "DELETE",
     })
   }
 
-  getRoutes() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.network.routes)
+  getConnections(carrierId?: string): Promise<ConnectionListItemViewModel[]> {
+    const url = carrierId
+      ? `${VAS_PATHS.network.connections}?carrierId=${encodeURIComponent(carrierId)}`
+      : VAS_PATHS.network.connections
+    return this.vasRequest<ConnectionListItemViewModel[]>(url)
   }
 
-  saveRoute(payload: unknown) {
-    return this.vasRequest<VasApiResponse<unknown>>(VAS_PATHS.network.routes, {
+  getConnection(id: string): Promise<ConnectionFormViewModel> {
+    return this.vasRequest<ConnectionFormViewModel>(VAS_PATHS.network.connection(id))
+  }
+
+  createConnection(payload: ConnectionFormViewModel): Promise<ConnectionFormViewModel> {
+    return this.vasRequest<ConnectionFormViewModel>(VAS_PATHS.network.connections, {
       method: "POST",
       body: JSON.stringify(payload),
     })
   }
 
-  getQueueWorkers() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.network.workers)
+  updateConnection(id: string, payload: ConnectionFormViewModel): Promise<ConnectionFormViewModel> {
+    return this.vasRequest<ConnectionFormViewModel>(VAS_PATHS.network.connection(id), {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    })
   }
 
-  getSmppSessions() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.network.smppSessions)
+  deleteConnection(id: string): Promise<void> {
+    return this.vasRequest<void>(VAS_PATHS.network.connection(id), {
+      method: "DELETE",
+    })
   }
 
-  // --- 3. Traffic & Messaging ---
+  toggleConnection(id: string, enable: boolean): Promise<void> {
+    return this.vasRequest<void>(VAS_PATHS.network.toggleConnection(id), {
+      method: "POST",
+      body: JSON.stringify({ enable }),
+    })
+  }
+
+  testConnection(id: string): Promise<unknown> {
+    return this.vasRequest<unknown>(VAS_PATHS.network.testConnection(id), {
+      method: "POST",
+    })
+  }
+
+  reconnectConnection(id: string): Promise<unknown> {
+    return this.vasRequest<unknown>(VAS_PATHS.network.reconnectConnection(id), {
+      method: "POST",
+    })
+  }
+
+  // --- 6. Routing Engine ---
+  getRoutes(): Promise<RouteListItemViewModel[]> {
+    return this.vasRequest<RouteListItemViewModel[]>(VAS_PATHS.network.routes)
+  }
+
+  getRoute(id: string): Promise<RouteFormViewModel> {
+    return this.vasRequest<RouteFormViewModel>(VAS_PATHS.network.route(id))
+  }
+
+  createRoute(payload: RouteFormViewModel): Promise<RouteFormViewModel> {
+    return this.vasRequest<RouteFormViewModel>(VAS_PATHS.network.routes, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+  }
+
+  updateRoute(id: string, payload: RouteFormViewModel): Promise<RouteFormViewModel> {
+    return this.vasRequest<RouteFormViewModel>(VAS_PATHS.network.route(id), {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    })
+  }
+
+  deleteRoute(id: string): Promise<void> {
+    return this.vasRequest<void>(VAS_PATHS.network.route(id), {
+      method: "DELETE",
+    })
+  }
+
+  toggleRoute(id: string): Promise<void> {
+    return this.vasRequest<void>(VAS_PATHS.network.toggleRoute(id), {
+      method: "POST",
+    })
+  }
+
+  simulateRoute(payload: RouteSimulationRequest): Promise<RoutingSimulationResponse> {
+    return this.vasRequest<RoutingSimulationResponse>(VAS_PATHS.network.simulateRoute, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+  }
+
+  // --- 17. SMPP Server ---
+  getSmppStatus(): Promise<SmppServerStatusResponse> {
+    return this.vasRequest<SmppServerStatusResponse>(VAS_PATHS.network.smppStatus)
+  }
+
+  disconnectSmppSession(sessionId: string): Promise<void> {
+    return this.vasRequest<void>(VAS_PATHS.network.smppDisconnect(sessionId), {
+      method: "POST",
+    })
+  }
+
+  // --- 10. Queues & Telemetry ---
+  getQueues(): Promise<QueueDashboardViewModel> {
+    return this.vasRequest<QueueDashboardViewModel>(VAS_PATHS.network.queues)
+  }
+
+  // --- 2. Messaging (Tag 2: Messaging) ---
+  getMessages(params?: MessageQueryParams | TrafficQueryParams) {
+    const qs = params
+      ? new URLSearchParams(
+          Object.entries(params)
+            .filter(([_, v]) => v !== undefined && v !== null && v !== "")
+            .reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {}),
+        ).toString()
+      : ""
+    return this.vasRequest<any>(`${VAS_PATHS.messaging.list}${qs ? `?${qs}` : ""}`)
+  }
+
   getTrafficLogs(params?: TrafficQueryParams) {
-    const qs = params ? new URLSearchParams(params as Record<string, string>).toString() : ""
-    return this.vasRequest<VasApiResponse<unknown[]>>(`${VAS_PATHS.traffic.messages}${qs ? `?${qs}` : ""}`)
+    return this.getMessages(params)
   }
 
   getMessageDetail(id: string) {
-    return this.vasRequest<VasApiResponse<unknown>>(VAS_PATHS.traffic.messageDetail(id))
+    return this.vasRequest<any>(VAS_PATHS.messaging.detail(id))
+  }
+
+  sendMessage(payload: SendMessageRequest, idempotencyKey?: string) {
+    const headers: Record<string, string> = {}
+    if (idempotencyKey) {
+      headers["Idempotency-Key"] = idempotencyKey
+    }
+    return this.vasRequest<any>(VAS_PATHS.messaging.send, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    })
+  }
+
+  sendBulkMessages(payload: SendBulkMessageRequest) {
+    return this.vasRequest<any>(VAS_PATHS.messaging.bulk, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+  }
+
+  uploadBatchMessages(formData: FormData): Promise<BatchUploadAcceptedResponse> {
+    const headers: Record<string, string> = {}
+    const token = this.getAccessToken()
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
+    }
+
+    const url = `${this.vasBaseUrl}${VAS_PATHS.messaging.upload}`
+    return fetch(url, {
+      method: "POST",
+      body: formData,
+      headers,
+      credentials: "include",
+    }).then(async (res) => {
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Pave360ApiError(
+          (body as { detail?: string })?.detail || `Batch upload failed: ${res.status}`,
+          res.status,
+          body,
+        )
+      }
+      return res.json() as Promise<BatchUploadAcceptedResponse>
+    })
+  }
+
+  getBatchUploadStatus(jobId: string): Promise<BatchUploadJobResponse> {
+    return this.vasRequest<BatchUploadJobResponse>(VAS_PATHS.messaging.uploadStatus(jobId))
   }
 
   getDeliveryReports(params?: DlrQueryParams) {

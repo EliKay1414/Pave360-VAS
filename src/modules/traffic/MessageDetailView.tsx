@@ -1,5 +1,6 @@
 import * as React from "react"
 import { MessageDetailRecord, resolveMessageRecord } from "./messageData"
+import { useMessageDetail } from "../../shared/hooks/useMessagingTraffic"
 
 export interface MessageDetailViewProps {
   message: Partial<MessageDetailRecord> & { id: string }
@@ -7,10 +8,12 @@ export interface MessageDetailViewProps {
 }
 
 export function MessageDetailView({ message: initialMessage, onBack }: MessageDetailViewProps) {
+  const { data: apiDetail } = useMessageDetail(initialMessage?.id || null)
+
   // Dynamically resolve full record with all fields, lifecycles, and DLR reports
   const record = React.useMemo(() => {
-    return resolveMessageRecord(initialMessage)
-  }, [initialMessage])
+    return resolveMessageRecord(apiDetail || initialMessage)
+  }, [apiDetail, initialMessage])
 
   // Sync page title with active message ID in App Header
   React.useEffect(() => {
