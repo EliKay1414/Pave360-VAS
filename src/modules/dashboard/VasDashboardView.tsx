@@ -352,10 +352,10 @@ export function VasDashboardView({ initialData }: VasDashboardViewProps) {
         </div>
       </div>
 
-      {/* 4. Row 3: Platform Foundation (Left) & Carrier Connections (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
-        {/* PLATFORM FOUNDATION (Span 2) */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-5 border border-slate-100/90 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+      {/* 4. Row 3: Platform Foundation (Left - Spans 3 cols to align under FAILED) & Carrier Connections (Right - Spans 1 col for vertical symmetry with PENDING/QUEUE & CURRENT TPS) */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-stretch">
+        {/* PLATFORM FOUNDATION (Span 3 - perfectly falls under FAILED card) */}
+        <div className="lg:col-span-3 bg-white rounded-2xl p-5 border border-slate-100/90 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col justify-between">
           <span className="text-[11px] font-bold text-[#7c8ea2] tracking-wider uppercase">
             PLATFORM FOUNDATION
           </span>
@@ -423,7 +423,7 @@ export function VasDashboardView({ initialData }: VasDashboardViewProps) {
           </div>
         </div>
 
-        {/* CARRIER CONNECTIONS (Span 1) */}
+        {/* CARRIER CONNECTIONS (Span 1 - in vertical symmetry with CURRENT TPS & PENDING/QUEUE) */}
         <div className="lg:col-span-1 bg-white rounded-2xl p-5 border border-slate-100/90 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col justify-between">
           <span className="text-[11px] font-bold text-[#7c8ea2] tracking-wider uppercase mb-3">
             CARRIER CONNECTIONS
@@ -433,12 +433,12 @@ export function VasDashboardView({ initialData }: VasDashboardViewProps) {
             {data.carrierConnections.map((carrier) => (
               <div
                 key={carrier.id}
-                className="flex items-center justify-between"
+                className="flex items-center justify-between gap-2"
               >
-                <span className="font-bold text-[#0c1a2e] text-sm">
+                <span className="font-bold text-[#0c1a2e] text-sm truncate" title={carrier.name}>
                   {carrier.name}
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-[#eefaf3] text-[#059669] border border-[#a7f3d0]">
+                <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#eefaf3] text-[#059669] border border-[#a7f3d0]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#10b981]" />
                   <span>{carrier.status}</span>
                 </span>
