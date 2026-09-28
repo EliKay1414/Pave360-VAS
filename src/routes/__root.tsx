@@ -46,10 +46,18 @@ function ThemeApplier() {
 }
 
 function AuthSessionInitializer() {
-  const { checkSession } = useAuth()
+  const { checkSession, signedIn } = useAuth()
+  const { pathname } = useLocation()
+  const isAuthPage = pathname === "/login" || pathname === "/logout" || pathname === "/register"
+
   React.useEffect(() => {
+    if (isAuthPage) return
+    const hasSavedAuth = typeof window !== "undefined" && localStorage.getItem("pave360_vas_authenticated") === "true"
+    if (!signedIn && !hasSavedAuth) return
+
     checkSession().catch(() => undefined)
-  }, [checkSession])
+  }, [checkSession, isAuthPage, signedIn])
+
   return null
 }
 

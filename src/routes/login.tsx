@@ -69,7 +69,7 @@ function LoginPage() {
         return
       }
       switchPersona("ADMIN")
-      navigate({ to: "/dashboard" })
+      await navigate({ to: "/dashboard", replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Unable to sign in. Please verify your credentials.")
     } finally {
@@ -88,7 +88,7 @@ function LoginPage() {
         return
       }
       switchPersona("ADMIN")
-      navigate({ to: "/dashboard" })
+      await navigate({ to: "/dashboard", replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Invalid code. Please try again.")
     } finally {
