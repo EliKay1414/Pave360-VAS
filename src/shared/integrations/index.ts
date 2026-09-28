@@ -8,4 +8,3 @@ export {
   type OtpResult,
 } from "./auth.integration"
 
-export { syncAllFromCore } from "./sync.integration"

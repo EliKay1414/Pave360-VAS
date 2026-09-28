@@ -2,16 +2,12 @@ import { configureStore, combineReducers } from "@reduxjs/toolkit"
 import { type TypedUseSelectorHook, useDispatch, useSelector } from "react-redux"
 import authReducer from "./slices/authSlice"
 import brandReducer from "./slices/brandSlice"
-import apiKeyReducer from "./slices/apiKeySlice"
-import uiReducer from "./slices/uiSlice"
 
 const STORAGE_KEY = "pave360_vas_store_v1"
 
 const rootReducer = combineReducers({
   auth: authReducer,
   brand: brandReducer,
-  apiKey: apiKeyReducer,
-  ui: uiReducer,
 })
 
 // Load persisted state from localStorage
@@ -43,8 +39,6 @@ store.subscribe(() => {
       JSON.stringify({
         auth: state.auth,
         brand: state.brand,
-        apiKey: state.apiKey,
-        ui: state.ui,
       })
     )
   } catch {

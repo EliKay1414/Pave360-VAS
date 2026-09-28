@@ -3,16 +3,6 @@ import { PAVE } from "./theme"
 
 const PRODUCT = "Pave360 VAS"
 
-export function shopHandleFromName(name?: string | null) {
-  return (
-    (name || "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-      .slice(0, 24) || "vas"
-  )
-}
-
 function clean(value?: string | null) {
   const text = value?.trim() || ""
   if (!text) return ""
@@ -43,7 +33,6 @@ export function profileIdentity(user?: User | null) {
 
 export function resolveBrand(
   brand: BrandConfig,
-  _shopName?: string,
   _user?: User | null,
 ) {
   const name = "Pave360 VAS"
@@ -62,3 +51,4 @@ export function resolveBrand(
     footerName: name,
   }
 }
+

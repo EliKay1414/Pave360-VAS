@@ -7,30 +7,18 @@ export type ThemeMode = "LIGHT" | "DARK" | "SYSTEM"
 export interface BrandState {
   brand: BrandConfig
   theme: ThemeMode
-  shopName: string
-  shopWhatsApp: string
-  shopWhatsAppGroup: string
-  shopHandle: string
-  shopIconUrl: string
-  shopPhotoUrl: string
 }
 
 const initialState: BrandState = {
   brand: {
-    brandName: "",
-    brandTagline: "",
+    brandName: "Pave360 VAS",
+    brandTagline: "Enterprise Telecom Switching & Operator Telemetry",
     brandColor: PAVE.teal,
-    brandLogoUrl: "",
-    brandDomain: "",
-    domainStatus: "PENDING",
+    brandLogoUrl: "/images/pave.png",
+    brandDomain: "dev-vas.pave360.com",
+    domainStatus: "ACTIVE",
   },
   theme: "LIGHT",
-  shopName: "",
-  shopWhatsApp: "",
-  shopWhatsAppGroup: "",
-  shopHandle: "",
-  shopIconUrl: "",
-  shopPhotoUrl: "",
 }
 
 export const brandSlice = createSlice({
@@ -44,26 +32,9 @@ export const brandSlice = createSlice({
     setTheme: (state, action: PayloadAction<ThemeMode>) => {
       state.theme = action.payload
     },
-    updateShopDetails: (
-      state,
-      action: PayloadAction<{
-        name?: string
-        whatsApp?: string
-        whatsAppGroup?: string
-        handle?: string
-        iconUrl?: string
-        photoUrl?: string
-      }>,
-    ) => {
-      if (action.payload.name !== undefined) state.shopName = action.payload.name
-      if (action.payload.whatsApp !== undefined) state.shopWhatsApp = action.payload.whatsApp
-      if (action.payload.whatsAppGroup !== undefined) state.shopWhatsAppGroup = action.payload.whatsAppGroup
-      if (action.payload.handle !== undefined) state.shopHandle = action.payload.handle
-      if (action.payload.iconUrl !== undefined) state.shopIconUrl = action.payload.iconUrl
-      if (action.payload.photoUrl !== undefined) state.shopPhotoUrl = action.payload.photoUrl
-    },
   },
 })
 
-export const { updateBrand, setTheme, updateShopDetails, resetBrand } = brandSlice.actions
+export const { updateBrand, setTheme, resetBrand } = brandSlice.actions
 export default brandSlice.reducer
+

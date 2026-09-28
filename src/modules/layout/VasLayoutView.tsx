@@ -4,14 +4,11 @@ import { Header } from "./Header"
 import { SidebarContent } from "./SidebarContent"
 import { BottomNavigation } from "./BottomNavigation"
 import { useAuth } from "../../shared/hooks/useAuth"
-import { useCoreSync } from "../../shared/hooks/useCoreSync"
 
 export function VasLayoutView() {
   const { user } = useAuth()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
-
-  useCoreSync(true)
 
   return (
     <div className="flex h-full min-h-0 bg-[#f5f7fa] text-slate-900 font-sans select-none">

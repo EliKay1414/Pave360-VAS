@@ -8,7 +8,7 @@ import {
   emptyOperator,
   type PersonaMode,
 } from "../store/slices/authSlice"
-import { updateBrand, updateShopDetails } from "../store/slices/brandSlice"
+import { updateBrand } from "../store/slices/brandSlice"
 import {
   loginOperator,
   verifyOperatorOtp,
@@ -44,7 +44,6 @@ export function useAuth() {
     const company = patch.company?.trim()
     if (company) {
       dispatch(updateBrand({ brandName: company }))
-      dispatch(updateShopDetails({ name: company }))
     }
   }
 

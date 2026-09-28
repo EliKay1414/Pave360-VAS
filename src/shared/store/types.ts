@@ -23,31 +23,6 @@ export interface BrandConfig {
   domainStatus: "PENDING" | "ACTIVE" | "FAILED"
 }
 
-export interface APIKey {
-  id: string
-  key: string
-  name: string
-  type: "LIVE" | "TEST"
-  createdAt: string
-  customerId?: string
-  webhookUrl?: string
-  webhookSecret?: string
-}
-
-export interface CoreApiCredentials {
-  environment: "LIVE" | "TEST"
-  accountId: string
-  apiKey: string
-  apiSecret: string
-  defaultSenderId: string
-  baseUrl: string
-  callbackUrl: string
-  paymentWebhookUrl: string
-  deliveryWebhookUrl: string
-  webhookSecret: string
-  savedAt?: string
-}
-
 export interface SenderIdItem {
   id: string
   name: string
@@ -61,11 +36,3 @@ export interface SenderIdItem {
   networks?: string[]
 }
 
-export interface NotificationItem {
-  id: string
-  title: string
-  description: string
-  type: "SYSTEM" | "WARNING" | "INFO" | "SUCCESS"
-  createdAt: string
-  read: boolean
-}
