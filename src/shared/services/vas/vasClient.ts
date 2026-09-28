@@ -7,6 +7,10 @@ import type {
   DlrQueryParams,
   AuditQueryParams,
   UssdSendPayload,
+  LoginApiRequest,
+  AuthUserResponse,
+  AuthMessageResponse,
+  ChangePasswordApiRequest,
 } from "./types"
 
 export class VasClient extends Pave360Client {
@@ -18,7 +22,7 @@ export class VasClient extends Pave360Client {
   }
 
   /**
-   * Internal HTTP request dispatcher configured with VAS base URL & Bearer auth
+   * Internal HTTP request dispatcher configured with VAS base URL & Cookie credentials
    */
   private async vasRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
     const headers: Record<string, string> = {
@@ -32,19 +36,67 @@ export class VasClient extends Pave360Client {
     }
 
     const url = `${this.vasBaseUrl}${path}`
-    const res = await fetch(url, { ...options, headers })
+    const res = await fetch(url, {
+      ...options,
+      headers,
+      credentials: "include", // Ensures ASP.NET Core session cookie is sent and received
+    })
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
-      const message =
+      let message =
+        (body as { detail?: string })?.detail ||
+        (body as { title?: string })?.title ||
         (body as { message?: string })?.message ||
-        (body as { error?: { message?: string } })?.error?.message ||
-        `VAS API Error: ${res.status} ${res.statusText}`
+        (body as { error?: { message?: string } })?.error?.message
+
+      if (!message && (body as { errors?: Record<string, string[]> })?.errors) {
+        const errs = (body as { errors: Record<string, string[]> }).errors
+        const firstField = Object.keys(errs)[0]
+        if (firstField && errs[firstField]?.[0]) {
+          message = errs[firstField][0]
+        }
+      }
+
+      if (!message) {
+        message = `VAS API Error: ${res.status} ${res.statusText}`
+      }
       throw new Pave360ApiError(message, res.status, body)
     }
 
     if (res.status === 204) return undefined as T
     return (await res.json()) as T
+  }
+
+  // --- 0. Authentication (ASP.NET Core Cookie Auth) ---
+  loginVas(payload: LoginApiRequest): Promise<AuthUserResponse> {
+    return this.vasRequest<AuthUserResponse>(VAS_PATHS.auth.login, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+  }
+
+  override async login(email: string, password: string): Promise<any> {
+    return this.loginVas({ email, password })
+  }
+
+  getCurrentUser(): Promise<AuthUserResponse> {
+    return this.vasRequest<AuthUserResponse>(VAS_PATHS.auth.me, {
+      method: "GET",
+    })
+  }
+
+  logoutVas(): Promise<AuthMessageResponse> {
+    return this.vasRequest<AuthMessageResponse>(VAS_PATHS.auth.logout, {
+      method: "POST",
+    })
+  }
+
+  changePassword(payload: ChangePasswordApiRequest): Promise<AuthMessageResponse> {
+    return this.vasRequest<AuthMessageResponse>(VAS_PATHS.auth.changePassword, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
   }
 
   // --- 1. Dashboard & Telemetry ---

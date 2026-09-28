@@ -12,6 +12,12 @@ export interface User {
   industry?: string
   address?: string
   clientType?: string
+  tenantId?: string | null
+  tenantName?: string | null
+  isPlatformUser?: boolean
+  roles?: string[]
+  permissions?: string[]
+  lastLoginAt?: string | null
 }
 
 export interface BrandConfig {

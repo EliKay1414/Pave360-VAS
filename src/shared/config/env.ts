@@ -18,7 +18,7 @@ export const env = {
   pave360BaseUrl: (import.meta.env.VITE_PAVE360_BASE_URL as string | undefined)?.replace(/\/$/, "") || "https://api.pave360.com",
 
   /** VAS Backend API */
-  vasApiUrl: (import.meta.env.VITE_VAS_API_URL as string | undefined)?.replace(/\/$/, "") || "",
+  vasApiUrl: (import.meta.env.VITE_VAS_API_URL as string | undefined)?.replace(/\/$/, "") || "https://vas.pave360.com",
 
   /** Optional: minimum Hubtel load amount (match core when known) */
   hubtelMinAmount: Number(import.meta.env.VITE_HUBTEL_MIN_AMOUNT ?? 10),
@@ -29,7 +29,7 @@ export function isSandboxMode() {
 }
 
 export function isLiveMode() {
-  return env.isLive && Boolean(env.pave360BaseUrl)
+  return env.isLive && Boolean(env.vasApiUrl || env.pave360BaseUrl)
 }
 
 export function hasVasBackend() {

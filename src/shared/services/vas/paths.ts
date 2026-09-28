@@ -3,6 +3,12 @@
  * Used to communicate directly with VITE_VAS_API_URL
  */
 export const VAS_PATHS = {
+  auth: {
+    login: "/api/v1/auth/login",
+    logout: "/api/v1/auth/logout",
+    me: "/api/v1/auth/me",
+    changePassword: "/api/v1/auth/change-password",
+  },
   dashboard: {
     metrics: "/api/v1/dashboard/metrics",
     carrierStatus: "/api/v1/dashboard/carrier-status",

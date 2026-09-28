@@ -53,7 +53,7 @@ function LoginPage() {
       } else {
         localStorage.removeItem("pave360_vas_login_email")
       }
-      const res = await completeLogin(data.email, data.password)
+      const res = await completeLogin(data.email, data.password, rememberMe)
       if (!res.ok) {
         setError(res.error)
         setLoading(false)

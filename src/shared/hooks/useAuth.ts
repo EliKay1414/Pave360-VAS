@@ -14,6 +14,8 @@ import {
   verifyOperatorOtp,
   logoutOperator,
   registerOperator,
+  checkAuthSession,
+  changePasswordOperator,
 } from "../integrations/auth.integration"
 import type { User } from "../store/types"
 
@@ -26,8 +28,8 @@ export function useAuth() {
   const otpPending = useAppSelector((state) => state.auth.otpPending)
   const loginEmail = useAppSelector((state) => state.auth.loginEmail)
 
-  const completeLogin = async (email: string, password = "") => {
-    return loginOperator(email, password)
+  const completeLogin = async (email: string, password = "", rememberMe = true) => {
+    return loginOperator(email, password, rememberMe)
   }
 
   const completeOtp = async (otp: string) => {
@@ -57,6 +59,11 @@ export function useAuth() {
     activePersona,
     isAdmin: activePersona === "ADMIN",
     isClient: activePersona === "CLIENT",
+    roles: user?.roles || [],
+    permissions: user?.permissions || [],
+    tenantId: user?.tenantId || null,
+    tenantName: user?.tenantName || null,
+    isPlatformUser: Boolean(user?.isPlatformUser),
     activeCustomerId,
     otpPending,
     loginEmail,
@@ -69,6 +76,8 @@ export function useAuth() {
     completeLogin,
     completeOtp,
     completeSignup,
+    checkSession: checkAuthSession,
+    changePassword: changePasswordOperator,
     legacyCompleteLogin: (email: string) => {
       dispatch(setUser({ ...(user || emptyOperator()), email: email.trim() }))
       dispatch(setSignedIn(true))

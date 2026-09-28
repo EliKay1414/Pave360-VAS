@@ -2,6 +2,7 @@ import * as React from "react"
 import { createRootRoute, Outlet, useLocation } from "@tanstack/react-router"
 import { useBrand } from "../shared/hooks/useBrand"
 import { applyGlobalTheme, type ThemeMode } from "../shared/lib/theme"
+import { useAuth } from "../shared/hooks/useAuth"
 import { Toaster } from "sonner"
 
 function ScrollToTop() {
@@ -44,6 +45,14 @@ function ThemeApplier() {
   return null
 }
 
+function AuthSessionInitializer() {
+  const { checkSession } = useAuth()
+  React.useEffect(() => {
+    checkSession().catch(() => undefined)
+  }, [checkSession])
+  return null
+}
+
 export const Route = createRootRoute({
   component: RootComponent,
 })
@@ -56,6 +65,7 @@ function RootComponent() {
     <>
       <ScrollToTop />
       <ThemeApplier />
+      <AuthSessionInitializer />
       <div className={`min-h-full font-sans antialiased relative ${isAuthPage ? "w-full" : "h-full overflow-hidden surface-page"}`}>
         <Outlet />
       </div>

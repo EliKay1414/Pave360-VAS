@@ -23,6 +23,36 @@ export interface VasApiErrorResponse {
   }
 }
 
+// --- Authentication Types ---
+export interface LoginApiRequest {
+  email: string
+  password: string
+  rememberMe?: boolean
+}
+
+export interface AuthUserResponse {
+  id: string | null
+  email: string | null
+  fullName: string | null
+  tenantId: string | null
+  tenantName: string | null
+  isPlatformUser: boolean
+  roles: string[] | null
+  permissions: string[] | null
+  lastLoginAt: string | null
+}
+
+export interface AuthMessageResponse {
+  success: boolean
+  message: string
+}
+
+export interface ChangePasswordApiRequest {
+  currentPassword: string
+  newPassword: string
+}
+
+
 export interface PaginationParams {
   page?: number
   limit?: number
