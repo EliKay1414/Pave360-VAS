@@ -46,108 +46,49 @@ export interface VasMetricData {
   }>
 }
 
-const DEFAULT_VAS_DATA: VasMetricData = {
-  messagesToday: 2,
-  avgLatency: "0s",
-  messagesThisMonth: 22,
-  deliveryRate: 0,
-  currentTps: 0,
-  submitted: 0,
-  delivered: 0,
-  failed: 0,
-  pendingQueue: 16,
-  queueDepth: 0,
-  platform: {
-    tenantsTotal: 1,
-    tenantsActive: 0,
-    usersTotal: 1,
-    usersActive: 1,
-    tenantsThisMonth: 1,
-    activeCarriers: 1,
-  },
-  carrierConnections: [
-    { id: "c1", name: "AT Ghana SMSC", status: "Connected" },
-  ],
-  recentAuditActivity: [
-    {
-      id: "a1",
-      when: "2026-09-24 14:48",
-      action: "auth.login",
-      entity: "User",
-      summary: "User admin@pave360.com signed in",
-      user: "admin@pave360.com",
-    },
-    {
-      id: "a2",
-      when: "2026-09-24 14:48",
-      action: "auth.logout",
-      entity: "User",
-      summary: "User signed out",
-      user: "admin@pave360.com",
-    },
-    {
-      id: "a3",
-      when: "2026-09-24 14:12",
-      action: "auth.login",
-      entity: "User",
-      summary: "User admin@pave360.com signed in",
-      user: "admin@pave360.com",
-    },
-    {
-      id: "a4",
-      when: "2026-09-24 13:49",
-      action: "auth.logout",
-      entity: "User",
-      summary: "User signed out",
-      user: "admin@pave360.com",
-    },
-    {
-      id: "a5",
-      when: "2026-09-24 13:00",
-      action: "auth.login",
-      entity: "User",
-      summary: "User admin@pave360.com signed in",
-      user: "admin@pave360.com",
-    },
-    {
-      id: "a6",
-      when: "2026-09-24 09:37",
-      action: "auth.login",
-      entity: "User",
-      summary: "User admin@pave360.com signed in",
-      user: "admin@pave360.com",
-    },
-    {
-      id: "a7",
-      when: "2026-09-23 17:26",
-      action: "auth.login",
-      entity: "User",
-      summary: "User admin@pave360.com signed in",
-      user: "admin@pave360.com",
-    },
-    {
-      id: "a8",
-      when: "2026-09-23 17:26",
-      action: "auth.logout",
-      entity: "User",
-      summary: "User signed out",
-      user: "admin@pave360.com",
-    },
-  ],
-}
-
-import { useVasTelemetry } from "../../shared/lib/vasActivityStore"
+import { useDashboardAnalytics } from "../../shared/hooks/useDashboardAnalytics"
 
 interface VasDashboardViewProps {
   initialData?: VasMetricData
 }
 
 export function VasDashboardView({ initialData }: VasDashboardViewProps) {
-  const dynamicTelemetry = useVasTelemetry()
-  const data = initialData || dynamicTelemetry
+  const { data: liveData, isLive, isFetching, refetch } = useDashboardAnalytics()
+  const data = initialData || liveData
 
   return (
     <div className="space-y-5 font-sans select-none">
+      {/* Telemetry Status Bar */}
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2 w-2">
+            <span
+              className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                isLive ? "bg-emerald-400" : "bg-sky-400"
+              }`}
+            />
+            <span
+              className={`relative inline-flex rounded-full h-2 w-2 ${
+                isLive ? "bg-emerald-500" : "bg-sky-500"
+              }`}
+            />
+          </span>
+          <span className="text-xs font-semibold text-slate-500">
+            {isLive ? "Live Gateway Telemetry · Connected" : "Local Telemetry Cache"}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+          title="Refresh metrics from VAS Gateway"
+        >
+          <span className={isFetching ? "inline-block animate-spin" : ""}>↻</span>
+          <span>{isFetching ? "Updating..." : "Refresh"}</span>
+        </button>
+      </div>
+
       {/* 1. Row 1: Four Main Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: MESSAGES TODAY */}

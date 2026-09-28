@@ -11,6 +11,7 @@ import type {
   AuthUserResponse,
   AuthMessageResponse,
   ChangePasswordApiRequest,
+  DashboardViewModel,
 } from "./types"
 
 export class VasClient extends Pave360Client {
@@ -99,17 +100,13 @@ export class VasClient extends Pave360Client {
     })
   }
 
-  // --- 1. Dashboard & Telemetry ---
-  getDashboardMetrics() {
-    return this.vasRequest<VasApiResponse<unknown>>(VAS_PATHS.dashboard.metrics)
+  // --- 1. Dashboard Analytics ---
+  getDashboard(): Promise<DashboardViewModel> {
+    return this.vasRequest<DashboardViewModel>(VAS_PATHS.dashboard.overview)
   }
 
-  getCarrierStatuses() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.dashboard.carrierStatus)
-  }
-
-  getRecentActivity() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.dashboard.recentActivity)
+  getDashboardMetrics(): Promise<DashboardViewModel> {
+    return this.getDashboard()
   }
 
   // --- 2. Network & Infrastructure ---

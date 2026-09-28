@@ -52,6 +52,44 @@ export interface ChangePasswordApiRequest {
   newPassword: string
 }
 
+// --- Dashboard Analytics Types ---
+export interface CarrierStateItemViewModel {
+  name: string | null
+  status: string | null
+  statusClass?: string | null
+}
+
+export interface DashboardAuditItemViewModel {
+  action: string | null
+  entityType: string | null
+  summary?: string | null
+  userEmail?: string | null
+  createdAt: string
+}
+
+export interface DashboardViewModel {
+  messagesToday: number
+  messagesThisMonth: number
+  submittedMessages: number
+  deliveredMessages: number
+  failedMessages: number
+  pendingMessages: number
+  deliveryRatePercent: number
+  averageDeliverySeconds: number
+  currentTps: number
+  activeCarriers: number
+  connectedCarriers: number
+  queueDepth: number
+  tenantCount: number
+  activeTenants: number
+  userCount: number
+  activeUsers: number
+  tenantsCreatedThisMonth: number
+  phaseNote?: string | null
+  carrierStates?: CarrierStateItemViewModel[] | null
+  recentAuditItems?: DashboardAuditItemViewModel[] | null
+}
+
 
 export interface PaginationParams {
   page?: number

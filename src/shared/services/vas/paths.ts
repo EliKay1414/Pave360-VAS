@@ -10,9 +10,10 @@ export const VAS_PATHS = {
     changePassword: "/api/v1/auth/change-password",
   },
   dashboard: {
-    metrics: "/api/v1/dashboard/metrics",
-    carrierStatus: "/api/v1/dashboard/carrier-status",
-    recentActivity: "/api/v1/dashboard/recent-activity",
+    overview: "/api/v1/dashboard",
+    metrics: "/api/v1/dashboard",
+    carrierStatus: "/api/v1/dashboard",
+    recentActivity: "/api/v1/dashboard",
   },
   network: {
     carriers: "/api/v1/network/carriers",
