@@ -1,16 +1,21 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { vasClient } from "../services/vas/vasClient"
-import type { SmppServerStatusResponse } from "../services/vas/types"
+import type { InboundMessageItemViewModel } from "../services/vas/types"
 import { env } from "../config/env"
 import { useAppSelector } from "../store"
 import { stopPollingOnAuthError } from "../lib/queryClient"
 
-export function useSmppServerStatus() {
+export interface UseInboundMoParams {
+  limit?: number
+  since?: string
+}
+
+export function useInboundMo(params: UseInboundMoParams = {}) {
   const signedIn = useAppSelector((state) => state.auth.signedIn)
 
-  return useQuery<SmppServerStatusResponse>({
-    queryKey: ["vas", "smpp-server"],
-    queryFn: () => vasClient.getSmppStatus(),
+  return useQuery<InboundMessageItemViewModel[]>({
+    queryKey: ["vas", "inbound-mo", params],
+    queryFn: () => vasClient.getInboundMessages(params),
     enabled: env.isLive && signedIn,
     staleTime: 10_000,
     refetchInterval: stopPollingOnAuthError(15_000),
@@ -24,16 +29,6 @@ export function useSmppServerStatus() {
         return false
       }
       return failureCount < 1
-    },
-  })
-}
-
-export function useDisconnectSmppSession() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (sessionId: string) => vasClient.disconnectSmppSession(sessionId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vas", "smpp-server"] })
     },
   })
 }

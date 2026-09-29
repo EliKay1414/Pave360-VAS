@@ -42,6 +42,14 @@ export default defineConfig({
     port: 5173,
     strictPort: false,
     host: true,
+    proxy: {
+      "/api": {
+        target: "https://vas.pave360.com",
+        changeOrigin: true,
+        secure: false,
+        cookieDomainRewrite: "localhost",
+      },
+    },
     warmup: {
       clientFiles: [
         "./src/main.tsx",

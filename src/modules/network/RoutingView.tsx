@@ -3,7 +3,6 @@ import { toast } from "sonner"
 import { RoutingHeader } from "./routing/components/RoutingHeader"
 import { RoutingTable } from "./routing/components/RoutingTable"
 import { RouteFormModal } from "./routing/components/RouteFormModal"
-import { RouteSimulatorModal } from "./routing/components/RouteSimulatorModal"
 import { DeleteRouteModal } from "./routing/components/DeleteRouteModal"
 import {
   useRoutes,
@@ -97,7 +96,6 @@ export function RoutingView() {
   const [modalMode, setModalMode] = React.useState<"create" | "edit">("create")
   const [currentRoute, setCurrentRoute] = React.useState<RouteRule | null>(null)
   const [deleteConfirmTarget, setDeleteConfirmTarget] = React.useState<RouteRule | null>(null)
-  const [isSimulatorOpen, setIsSimulatorOpen] = React.useState(false)
 
   const saveRoutes = (updated: RouteRule[]) => {
     setRoutes(updated)
@@ -200,7 +198,6 @@ export function RoutingView() {
     <div className="space-y-4 font-sans select-none pb-8">
       <RoutingHeader
         onOpenCreate={handleOpenCreate}
-        onOpenTest={() => setIsSimulatorOpen(true)}
         onRefresh={() => refetch()}
         isFetching={isFetching}
       />
@@ -221,11 +218,6 @@ export function RoutingView() {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleFormSubmit}
         isSubmitting={createRouteMutation.isPending || updateRouteMutation.isPending}
-      />
-
-      <RouteSimulatorModal
-        isOpen={isSimulatorOpen}
-        onClose={() => setIsSimulatorOpen(false)}
       />
 
       <DeleteRouteModal

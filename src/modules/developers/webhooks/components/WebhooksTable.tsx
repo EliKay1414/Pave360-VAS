@@ -2,10 +2,11 @@ import type { WebhookRecord } from "../types"
 
 interface WebhooksTableProps {
   webhooks: WebhookRecord[]
+  isLoading?: boolean
   onDeleteClick?: (webhook: WebhookRecord) => void
 }
 
-export function WebhooksTable({ webhooks, onDeleteClick }: WebhooksTableProps) {
+export function WebhooksTable({ webhooks, isLoading, onDeleteClick }: WebhooksTableProps) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
       <div className="overflow-x-auto">
@@ -30,15 +31,39 @@ export function WebhooksTable({ webhooks, onDeleteClick }: WebhooksTableProps) {
               <th className="px-6 py-4 text-[11px] font-bold text-[#7c8ea2] tracking-wider uppercase">
                 FAILURES
               </th>
-              {webhooks.length > 0 && (
-                <th className="px-6 py-4 text-[11px] font-bold text-[#7c8ea2] tracking-wider uppercase text-right">
-                  <span className="sr-only">Actions</span>
-                </th>
-              )}
+              <th className="px-6 py-4 text-[11px] font-bold text-[#7c8ea2] tracking-wider uppercase text-right">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 font-sans">
-            {webhooks.length > 0 ? (
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <tr key={`skeleton-${i}`} className="animate-pulse">
+                  <td className="px-6 py-4">
+                    <div className="h-4 bg-slate-100 rounded w-28" />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-4 bg-slate-100 rounded w-48" />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-5 bg-slate-100 rounded-full w-24" />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-4 bg-slate-100 rounded w-20" />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-5 bg-slate-100 rounded-full w-16" />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-4 bg-slate-100 rounded w-8" />
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="h-4 bg-slate-100 rounded w-12 ml-auto" />
+                  </td>
+                </tr>
+              ))
+            ) : webhooks.length > 0 ? (
               webhooks.map((hook) => {
                 const isEnabled = hook.enabled || hook.status === "Active"
 

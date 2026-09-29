@@ -12,8 +12,8 @@ export function useNetworkQueues() {
     queryKey: ["vas", "queues"],
     queryFn: () => vasClient.getQueues(),
     enabled: env.isLive && signedIn,
-    staleTime: 3_000,
-    refetchInterval: stopPollingOnAuthError(5_000),
+    staleTime: 10_000,
+    refetchInterval: stopPollingOnAuthError(15_000),
     retry: (failureCount, error: any) => {
       if (
         error?.status === 401 ||

@@ -1,16 +1,14 @@
 import * as React from "react"
-import { RotateCw, Plus, Play } from "lucide-react"
+import { RotateCw, Plus } from "lucide-react"
 
 interface RoutingHeaderProps {
   onOpenCreate: () => void
-  onOpenTest: () => void
   onRefresh: () => void
   isFetching: boolean
 }
 
 export const RoutingHeader: React.FC<RoutingHeaderProps> = ({
   onOpenCreate,
-  onOpenTest,
   onRefresh,
   isFetching,
 }) => {
@@ -30,15 +28,6 @@ export const RoutingHeader: React.FC<RoutingHeaderProps> = ({
           aria-label="Refresh routes"
         >
           <RotateCw className={`h-4 w-4 ${isFetching ? "animate-spin text-[#005944]" : ""}`} />
-        </button>
-
-        <button
-          type="button"
-          onClick={onOpenTest}
-          className="px-3.5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
-        >
-          <Play className="h-4 w-4 text-[#005944]" />
-          Test route
         </button>
 
         <button

@@ -36,6 +36,12 @@ import type {
   UssdSessionResponse,
   UssdNotifyRequest,
   UssdNotifyResponse,
+  InboundMessageItemViewModel,
+  InboundMessageApiResponse,
+  WebhookItemViewModel,
+  CreateWebhookRequest,
+  CreateWebhookResponse,
+  WebhooksApiResponse,
 } from "./types"
 
 export class VasClient extends Pave360Client {
@@ -43,7 +49,19 @@ export class VasClient extends Pave360Client {
 
   constructor() {
     super()
-    this.vasBaseUrl = (env.vasApiUrl || env.pave360BaseUrl).replace(/\/$/, "")
+    const isLocalhost =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname.endsWith(".localhost"))
+
+    // On localhost DEV, use relative path ("") to route through Vite proxy,
+    // which rewrites SameSite cookies and completely eliminates cross-origin 401s
+    if (isLocalhost && import.meta.env.DEV) {
+      this.vasBaseUrl = ""
+    } else {
+      this.vasBaseUrl = (env.vasApiUrl || env.pave360BaseUrl).replace(/\/$/, "")
+    }
   }
 
   /**
@@ -57,13 +75,19 @@ export class VasClient extends Pave360Client {
 
     // Do NOT send Bearer token on auth routes to avoid conflicting with ASP.NET Core cookie auth
     const isAuthRoute = path.startsWith("/api/v1/auth")
-    const token = !isAuthRoute ? this.getAccessToken() : null
+    let token = !isAuthRoute ? this.getAccessToken() : null
+    if (!token && !isAuthRoute && typeof window !== "undefined") {
+      try {
+        token = localStorage.getItem("pave360_access_token")
+      } catch {}
+    }
     if (token) {
       headers.Authorization = `Bearer ${token}`
     }
 
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 30000) // 30-second safe timeout for remote gateway hashing
+    const requestTimeoutMs = (options as any)?.timeoutMs || 12000 // 12-second consistent global timeout
+    const timeout = setTimeout(() => controller.abort(), requestTimeoutMs)
     const signal = options.signal || controller.signal
 
     const url = `${this.vasBaseUrl}${path}`
@@ -303,7 +327,10 @@ export class VasClient extends Pave360Client {
   }
 
   getMessageDetail(id: string) {
-    return this.vasRequest<any>(VAS_PATHS.messaging.detail(id))
+    return this.vasRequest<any>(VAS_PATHS.messaging.detail(id)).catch((err) => {
+      if (err?.status === 404) return null
+      throw err
+    })
   }
 
   sendMessage(payload: SendMessageRequest, idempotencyKey?: string) {
@@ -360,9 +387,6 @@ export class VasClient extends Pave360Client {
     return this.vasRequest<VasApiResponse<unknown[]>>(`${VAS_PATHS.traffic.dlr}${qs ? `?${qs}` : ""}`)
   }
 
-  getInboundMessages() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.traffic.inboundMo)
-  }
 
   // --- 7. Sender IDs (Tag 7: /api/v1/senders) ---
   getSenderIds(): Promise<SenderIdItemViewModel[]> {
@@ -493,8 +517,61 @@ export class VasClient extends Pave360Client {
     })
   }
 
-  getWebhooks() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.developers.webhooks)
+  // --- 8. Inbound MO ---
+  async getInboundMessages(params?: { limit?: number; since?: string }): Promise<InboundMessageItemViewModel[]> {
+    const qs = params
+      ? new URLSearchParams(
+          Object.entries(params)
+            .filter(([_, v]) => v !== undefined && v !== null && v !== "")
+            .reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {})
+        ).toString()
+      : ""
+
+    try {
+      const res = await this.vasRequest<any>(`/api/v1/messages/inbound${qs ? `?${qs}` : ""}`)
+      if (Array.isArray(res)) return res
+      if (Array.isArray(res?.items)) return res.items
+      if (Array.isArray(res?.data)) return res.data
+      return []
+    } catch (err: any) {
+      if (err?.status === 404 || err?.status === 405) {
+        const fallbackRes = await this.vasRequest<any>(`${VAS_PATHS.delivery.inbound}${qs ? `?${qs}` : ""}`)
+        if (Array.isArray(fallbackRes)) return fallbackRes
+        if (Array.isArray(fallbackRes?.items)) return fallbackRes.items
+        if (Array.isArray(fallbackRes?.data)) return fallbackRes.data
+        return []
+      }
+      throw err
+    }
+  }
+
+  // --- 9. Webhooks ---
+  async getWebhooks(): Promise<WebhookItemViewModel[]> {
+    const res = await this.vasRequest<any>(VAS_PATHS.developers.webhooks)
+    if (Array.isArray(res)) return res
+    if (Array.isArray(res?.webhooks)) return res.webhooks
+    if (Array.isArray(res?.items)) return res.items
+    if (Array.isArray(res?.data)) return res.data
+    return []
+  }
+
+  createWebhook(payload: CreateWebhookRequest): Promise<CreateWebhookResponse> {
+    return this.vasRequest<CreateWebhookResponse>(VAS_PATHS.developers.webhooks, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+  }
+
+  deleteWebhook(id: string): Promise<void> {
+    return this.vasRequest<void>(VAS_PATHS.developers.deleteWebhook(id), {
+      method: "DELETE",
+    })
+  }
+
+  testWebhook(id: string): Promise<void> {
+    return this.vasRequest<void>(VAS_PATHS.developers.testWebhook(id), {
+      method: "POST",
+    })
   }
 
   getSystemSettings() {

@@ -1,16 +1,14 @@
 import * as React from "react"
-import { Send, Terminal, RotateCw } from "lucide-react"
+import { Send, RotateCw } from "lucide-react"
 
 interface UssdSessionsHeaderProps {
   onOpenNotify: () => void
-  onOpenSimulator: () => void
   onRefresh: () => void
   isFetching: boolean
 }
 
 export const UssdSessionsHeader: React.FC<UssdSessionsHeaderProps> = ({
   onOpenNotify,
-  onOpenSimulator,
   onRefresh,
   isFetching,
 }) => {
@@ -32,15 +30,6 @@ export const UssdSessionsHeader: React.FC<UssdSessionsHeaderProps> = ({
           aria-label="Refresh sessions"
         >
           <RotateCw className={`h-4 w-4 ${isFetching ? "animate-spin text-[#005944]" : ""}`} />
-        </button>
-
-        <button
-          type="button"
-          onClick={onOpenSimulator}
-          className="px-3.5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 text-[13px] font-semibold rounded-lg shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0"
-        >
-          <Terminal className="h-4 w-4 text-slate-500" />
-          Test menu
         </button>
 
         <button

@@ -460,3 +460,67 @@ export interface UssdNotifyResponse {
   cost?: string
 }
 
+// ==========================================
+// 8. INBOUND MO (MOBILE-ORIGINATED)
+// ==========================================
+export interface InboundMessageItemViewModel {
+  id: string
+  from: string
+  to: string
+  keyword?: string
+  message?: string
+  body?: string
+  carrier?: string
+  status?: string
+  receivedAt?: string
+  createdAt?: string
+}
+
+export interface InboundMessageApiResponse {
+  count?: number
+  items?: InboundMessageItemViewModel[]
+  data?: InboundMessageItemViewModel[]
+}
+
+// ==========================================
+// 9. WEBHOOKS
+// ==========================================
+export interface WebhookItemViewModel {
+  id: string
+  name: string
+  url: string
+  event: string
+  status?: string
+  secret?: string
+  maxAttempts?: number
+  timeoutSeconds?: number
+  failures?: number
+  lastTriggeredAt?: string
+  createdAt?: string
+  enabled?: boolean
+}
+
+export interface CreateWebhookRequest {
+  name: string
+  url: string
+  event: string
+  secret?: string
+  maxAttempts?: number
+  timeoutSeconds?: number
+  enabled?: boolean
+}
+
+export interface CreateWebhookResponse {
+  success: boolean
+  id?: string
+  status?: string
+  message?: string
+}
+
+export interface WebhooksApiResponse {
+  webhooks?: WebhookItemViewModel[]
+  items?: WebhookItemViewModel[]
+  data?: WebhookItemViewModel[]
+}
+
+

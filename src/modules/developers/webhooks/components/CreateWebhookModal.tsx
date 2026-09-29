@@ -4,12 +4,14 @@ import { EVENT_TYPES, type WebhookRecord } from "../types"
 
 interface CreateWebhookModalProps {
   isOpen: boolean
+  isSubmitting?: boolean
   onClose: () => void
   onCreate: (webhook: WebhookRecord) => void
 }
 
 export function CreateWebhookModal({
   isOpen,
+  isSubmitting,
   onClose,
   onCreate,
 }: CreateWebhookModalProps) {
@@ -184,9 +186,10 @@ export function CreateWebhookModal({
 
               <button
                 type="submit"
-                className="px-5 py-2 bg-[#005944] hover:bg-[#004837] text-white text-xs font-semibold rounded-lg shadow-xs transition-colors cursor-pointer"
+                disabled={isSubmitting}
+                className="px-5 py-2 bg-[#005944] hover:bg-[#004837] text-white text-xs font-semibold rounded-lg shadow-xs transition-colors cursor-pointer disabled:opacity-50"
               >
-                Create
+                {isSubmitting ? "Creating..." : "Create"}
               </button>
             </div>
           </form>

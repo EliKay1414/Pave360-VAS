@@ -10,7 +10,6 @@ import {
   UssdNotifyModal,
   type UssdNotifyFormData,
 } from "./ussd/components/UssdNotifyModal"
-import { UssdSimulatorModal } from "./ussd/components/UssdSimulatorModal"
 import { useUssdSessions, useSendUssdNotify } from "../../shared/hooks/useUssdGateway"
 import { recordVasActivity } from "../../shared/lib/vasActivityStore"
 import { env } from "../../shared/config/env"
@@ -36,7 +35,6 @@ export function UssdSessionsView({ initialNotifyOpen = false }: UssdSessionsView
   // Selected session for full-screen detail inspection
   const [selectedSession, setSelectedSession] = React.useState<UssdSessionRecord | null>(null)
   const [isNotifyOpen, setIsNotifyOpen] = React.useState(initialNotifyOpen)
-  const [isSimulatorOpen, setIsSimulatorOpen] = React.useState(false)
 
   // Direct remote sessions mapping; no fallback to mock when live data is loading
   const displayedSessions: UssdSessionRecord[] = React.useMemo(() => {
@@ -110,7 +108,6 @@ export function UssdSessionsView({ initialNotifyOpen = false }: UssdSessionsView
     <div className="space-y-4 font-sans select-none pb-8">
       <UssdSessionsHeader
         onOpenNotify={() => setIsNotifyOpen(true)}
-        onOpenSimulator={() => setIsSimulatorOpen(true)}
         onRefresh={() => refetch()}
         isFetching={isFetching}
       />
@@ -126,11 +123,6 @@ export function UssdSessionsView({ initialNotifyOpen = false }: UssdSessionsView
         onClose={() => setIsNotifyOpen(false)}
         onSubmit={handleSendNotify}
         isSubmitting={notifyMutation.isPending}
-      />
-
-      <UssdSimulatorModal
-        isOpen={isSimulatorOpen}
-        onClose={() => setIsSimulatorOpen(false)}
       />
     </div>
   )

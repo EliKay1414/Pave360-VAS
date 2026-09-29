@@ -95,7 +95,8 @@ export function useMessageDetail(id: string | null) {
     queryKey: ["vas", "message-detail", id],
     queryFn: () => (id ? vasClient.getMessageDetail(id) : null),
     enabled: Boolean(id && env.isLive && signedIn),
-    staleTime: 10000,
+    staleTime: 30000,
+    retry: false,
   })
 }
 
