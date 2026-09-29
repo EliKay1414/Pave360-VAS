@@ -1,5 +1,9 @@
 import * as React from "react"
 import { RotateCw } from "lucide-react"
+import {
+  useSmppServerStatus,
+  useDisconnectSmppSession,
+} from "../../shared/hooks/useNetworkSmppServer"
 
 export interface SmppSession {
   id: string
@@ -40,6 +44,9 @@ function resolveAppPort(): string {
 }
 
 export function SmppServerView() {
+  const { data: serverStatus, isFetching, refetch } = useSmppServerStatus()
+  const disconnectMutation = useDisconnectSmppSession()
+
   // Dynamic App Port
   const [port, setPort] = React.useState<string>(resolveAppPort)
   const [isRefreshing, setIsRefreshing] = React.useState(false)
@@ -66,13 +73,32 @@ export function SmppServerView() {
     return []
   })
 
+  const displayedSessions = React.useMemo(() => {
+    if (serverStatus?.activeSessions && serverStatus.activeSessions.length > 0) {
+      return serverStatus.activeSessions.map((s) => ({
+        id: s.sessionId,
+        systemId: s.systemId || "ESME_CLIENT",
+        remoteEndpoint: s.remoteEndPoint || "127.0.0.1",
+        bindState: (s.bindState?.toUpperCase() || "TRANSCEIVER") as any,
+        submits: s.messagesSubmitted ?? 0,
+        dlrs: s.messagesDelivered ?? 0,
+        connectedAt: s.connectedAt ? new Date(s.connectedAt).toLocaleTimeString() : "—",
+        lastActivity: s.lastActivityAt ? new Date(s.lastActivityAt).toLocaleTimeString() : "—",
+      }))
+    }
+    return sessions
+  }, [serverStatus, sessions])
+
+  const activePort = serverStatus?.listeningPort ? String(serverStatus.listeningPort) : port
+
   // Calculate aggregates
-  const activeSessionsCount = sessions.length
-  const totalSubmits = sessions.reduce((acc, s) => acc + (s.submits || 0), 0)
-  const totalDlrs = sessions.reduce((acc, s) => acc + (s.dlrs || 0), 0)
+  const activeSessionsCount = displayedSessions.length
+  const totalSubmits = displayedSessions.reduce((acc, s) => acc + (s.submits || 0), 0)
+  const totalDlrs = displayedSessions.reduce((acc, s) => acc + (s.dlrs || 0), 0)
 
   // Refresh handler
   const handleRefresh = () => {
+    refetch()
     setIsRefreshing(true)
     setTimeout(() => {
       // Re-read storage and port
@@ -93,6 +119,7 @@ export function SmppServerView() {
   const handleDisconnect = (id: string) => {
     const updated = sessions.filter((s) => s.id !== id)
     setSessions(updated)
+    disconnectMutation.mutate(id)
     try {
       localStorage.setItem(STORAGE_SESSIONS_KEY, JSON.stringify(updated))
     } catch {
@@ -100,8 +127,8 @@ export function SmppServerView() {
     }
   }
 
-  // Bind address e.g. 0.0.0.0:5173
-  const bindAddress = `0.0.0.0:${port}`
+  // Bind address e.g. 0.0.0.0:2775
+  const bindAddress = `0.0.0.0:${activePort}`
 
   return (
     <div className="space-y-5 font-sans select-none">
@@ -125,10 +152,10 @@ export function SmppServerView() {
         <button
           type="button"
           onClick={handleRefresh}
-          disabled={isRefreshing}
+          disabled={isRefreshing || isFetching}
           className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-[13px] font-semibold transition-colors cursor-pointer shadow-xs shrink-0 self-start disabled:opacity-60"
         >
-          <RotateCw className={`h-3.5 w-3.5 text-slate-600 ${isRefreshing ? "animate-spin" : ""}`} />
+          <RotateCw className={`h-3.5 w-3.5 text-slate-600 ${isRefreshing || isFetching ? "animate-spin text-[#005944]" : ""}`} />
           <span>Refresh</span>
         </button>
       </div>
@@ -208,8 +235,8 @@ export function SmppServerView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {sessions.length > 0 ? (
-                sessions.map((session) => (
+              {displayedSessions.length > 0 ? (
+                displayedSessions.map((session) => (
                   <tr
                     key={session.id}
                     className="hover:bg-slate-50/50 transition-colors"

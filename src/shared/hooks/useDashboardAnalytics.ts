@@ -3,6 +3,7 @@ import { vasClient } from "../services/vas/vasClient"
 import type { DashboardViewModel } from "../services/vas/types"
 import { useVasTelemetry, type VasMetricData } from "../lib/vasActivityStore"
 import { env } from "../config/env"
+import { useAppSelector } from "../store"
 
 export function mapDashboardViewModelToMetrics(
   vm: DashboardViewModel,
@@ -63,11 +64,12 @@ import { stopPollingOnAuthError } from "../lib/queryClient"
 
 export function useDashboardAnalytics() {
   const fallbackTelemetry = useVasTelemetry()
+  const signedIn = useAppSelector((state) => state.auth.signedIn)
 
   const query = useQuery<DashboardViewModel>({
     queryKey: ["vas", "dashboard", "analytics"],
     queryFn: () => vasClient.getDashboard(),
-    enabled: env.isLive,
+    enabled: env.isLive && signedIn,
     refetchInterval: stopPollingOnAuthError(10000), // Stop polling if 401/403
     staleTime: 5000,
     retry: (failureCount, error: any) => {

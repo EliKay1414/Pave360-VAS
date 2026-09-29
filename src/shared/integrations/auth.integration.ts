@@ -13,6 +13,7 @@ import { env } from "../config/env"
 import type { User } from "../store/types"
 import type { AuthUserResponse } from "../services/vas/types"
 import { recordVasActivity } from "../lib/vasActivityStore"
+import { queryClient } from "../lib/queryClient"
 
 export type LoginResult =
   | { ok: true; requiresOtp?: false }
@@ -241,7 +242,7 @@ export function registerOperator(
   dispatch(setSignedIn(true))
 }
 
-export async function logoutOperator() {
+export function logoutOperator() {
   const currentEmail = store.getState().auth?.user?.email || "admin@pave360.com"
   recordVasActivity({
     action: "auth.logout",
@@ -255,16 +256,12 @@ export async function logoutOperator() {
     localStorage.removeItem("pave360_vas_user")
   }
 
-  store.dispatch(clearAuth())
+  // Cancel any active background queries and purge cache
+  queryClient.cancelQueries()
+  queryClient.clear()
 
-  try {
-    await vasClient.logoutVas()
-  } catch (err: unknown) {
-    const status = (err as { status?: number })?.status
-    if (status !== 401) {
-      console.warn("VAS logout request completed with warning:", err)
-    }
-  }
+  // Reset Redux authentication state immediately
+  store.dispatch(clearAuth())
 }
 
 export async function changePasswordOperator(

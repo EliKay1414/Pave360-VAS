@@ -1,6 +1,13 @@
 import * as React from "react"
-import { X, CheckCircle2 } from "lucide-react"
+import { X, CheckCircle2, RotateCw } from "lucide-react"
 import { recordVasActivity } from "../../shared/lib/vasActivityStore"
+import {
+  useCarriers,
+  useCreateCarrier,
+  useUpdateCarrier,
+  useDeleteCarrier,
+} from "../../shared/hooks/useNetworkCarriers"
+import type { CarrierListItemViewModel } from "../../shared/services/vas/types"
 
 export interface Carrier {
   id: string
@@ -18,6 +25,26 @@ export interface Carrier {
   supportsUnicode: boolean
   supportsConcatenated: boolean
   notes: string
+}
+
+function mapApiCarrier(item: CarrierListItemViewModel): Carrier {
+  return {
+    id: item.id,
+    name: item.name,
+    code: item.code,
+    country: item.countryCode || "GH",
+    mcc: item.mcc || "",
+    mnc: item.mnc || "",
+    status: (item.status === "Active" ? "Active" : "Inactive") as "Active" | "Inactive",
+    protocol: item.defaultProtocol || "SMPP",
+    priority: item.priority ?? 100,
+    connections: `${item.enabledConnectionCount ?? 0} / ${item.connectionCount ?? 0} enabled`,
+    supportsSms: true,
+    supportsDlrs: true,
+    supportsUnicode: true,
+    supportsConcatenated: true,
+    notes: "",
+  }
 }
 
 const DEFAULT_CARRIERS: Carrier[] = [
@@ -43,6 +70,11 @@ const DEFAULT_CARRIERS: Carrier[] = [
 const STORAGE_KEY = "pave360_vas_carriers_data"
 
 export function CarriersView() {
+  const { data: liveCarriers, isLoading, isFetching, refetch } = useCarriers()
+  const createCarrierMutation = useCreateCarrier()
+  const updateCarrierMutation = useUpdateCarrier()
+  const deleteCarrierMutation = useDeleteCarrier()
+
   // Load carriers from localStorage or fallback to template default
   const [carriers, setCarriers] = React.useState<Carrier[]>(() => {
     try {
@@ -56,6 +88,13 @@ export function CarriersView() {
     }
     return DEFAULT_CARRIERS
   })
+
+  const displayedCarriers = React.useMemo(() => {
+    if (liveCarriers && liveCarriers.length > 0) {
+      return liveCarriers.map(mapApiCarrier)
+    }
+    return carriers
+  }, [liveCarriers, carriers])
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = React.useState(false)
@@ -147,10 +186,11 @@ export function CarriersView() {
     if (!formData.name.trim()) return
 
     if (modalMode === "create") {
+      const codeVal = formData.code.trim() || formData.name.toUpperCase().slice(0, 5)
       const newCarrier: Carrier = {
         id: String(Date.now()),
         name: formData.name.trim(),
-        code: formData.code.trim() || formData.name.toUpperCase().slice(0, 5),
+        code: codeVal,
         country: formData.country.trim() || "GH",
         mcc: formData.mcc.trim(),
         mnc: formData.mnc.trim(),
@@ -165,6 +205,18 @@ export function CarriersView() {
         notes: formData.notes.trim(),
       }
       saveCarriers([...carriers, newCarrier])
+      createCarrierMutation.mutate({
+        name: formData.name.trim(),
+        code: codeVal,
+        countryCode: formData.country.trim() || "GH",
+        mcc: formData.mcc.trim(),
+        mnc: formData.mnc.trim(),
+        status: formData.status,
+        defaultProtocol: formData.protocol,
+        priority: Number(formData.priority) || 100,
+        supportsSms: formData.supportsSms,
+        supportsDeliveryReceipts: formData.supportsDlrs,
+      })
       recordVasActivity({
         action: "carrier.create",
         entity: "Carrier",
@@ -192,6 +244,21 @@ export function CarriersView() {
           : c
       )
       saveCarriers(updated)
+      updateCarrierMutation.mutate({
+        id: currentCarrier.id,
+        payload: {
+          name: formData.name.trim(),
+          code: formData.code.trim(),
+          countryCode: formData.country.trim() || "GH",
+          mcc: formData.mcc.trim(),
+          mnc: formData.mnc.trim(),
+          status: formData.status,
+          defaultProtocol: formData.protocol,
+          priority: Number(formData.priority) || 100,
+          supportsSms: formData.supportsSms,
+          supportsDeliveryReceipts: formData.supportsDlrs,
+        },
+      })
       recordVasActivity({
         action: "carrier.update",
         entity: "Carrier",
@@ -204,9 +271,10 @@ export function CarriersView() {
 
   // Delete directly
   const handleDeleteCarrier = (id: string) => {
-    const target = carriers.find((c) => c.id === id)
+    const target = (displayedCarriers || carriers).find((c) => c.id === id)
     const updated = carriers.filter((c) => c.id !== id)
     saveCarriers(updated)
+    deleteCarrierMutation.mutate(id)
     recordVasActivity({
       action: "carrier.delete",
       entity: "Carrier",
@@ -223,13 +291,23 @@ export function CarriersView() {
         <p className="text-sm text-[#5b6e82] font-normal">
           Telecommunications operators available for routing and connectivity.
         </p>
-        <button
-          type="button"
-          onClick={handleOpenCreate}
-          className="inline-flex items-center justify-center px-4 py-2 bg-[#005944] hover:bg-[#004837] text-white text-sm font-semibold rounded-lg shadow-xs transition-colors cursor-pointer shrink-0 self-start sm:self-auto"
-        >
-          Create carrier
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            type="button"
+            title="Refresh carriers from gateway"
+            onClick={() => refetch()}
+            className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+          >
+            <RotateCw className={`h-4 w-4 ${isFetching ? "animate-spin text-[#005944]" : ""}`} />
+          </button>
+          <button
+            type="button"
+            onClick={handleOpenCreate}
+            className="inline-flex items-center justify-center px-4 py-2 bg-[#005944] hover:bg-[#004837] text-white text-sm font-semibold rounded-lg shadow-xs transition-colors cursor-pointer shrink-0"
+          >
+            Create carrier
+          </button>
+        </div>
       </div>
 
       {/* 2. Carriers Data Table Card */}
@@ -265,8 +343,8 @@ export function CarriersView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {carriers.length > 0 ? (
-                carriers.map((carrier) => (
+              {displayedCarriers.length > 0 ? (
+                displayedCarriers.map((carrier) => (
                   <tr
                     key={carrier.id}
                     className="hover:bg-slate-50/50 transition-colors"

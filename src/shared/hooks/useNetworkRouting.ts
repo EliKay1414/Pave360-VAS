@@ -6,21 +6,40 @@ import type {
   RouteSimulationRequest,
   RoutingSimulationResponse,
 } from "../services/vas/types"
+import { env } from "../config/env"
+import { useAppSelector } from "../store"
+import { stopPollingOnAuthError } from "../lib/queryClient"
 
 export function useRoutes() {
+  const signedIn = useAppSelector((state) => state.auth.signedIn)
+
   return useQuery<RouteListItemViewModel[]>({
     queryKey: ["vas", "routes"],
     queryFn: () => vasClient.getRoutes(),
+    enabled: env.isLive && signedIn,
     staleTime: 10_000,
-    refetchInterval: 30_000,
+    refetchInterval: stopPollingOnAuthError(30_000),
+    retry: (failureCount, error: any) => {
+      if (
+        error?.status === 401 ||
+        error?.status === 403 ||
+        error?.statusCode === 401 ||
+        error?.statusCode === 403
+      ) {
+        return false
+      }
+      return failureCount < 1
+    },
   })
 }
 
 export function useRouteDetail(id?: string) {
+  const signedIn = useAppSelector((state) => state.auth.signedIn)
+
   return useQuery<RouteFormViewModel>({
     queryKey: ["vas", "route", id],
     queryFn: () => vasClient.getRoute(id!),
-    enabled: Boolean(id),
+    enabled: Boolean(id && env.isLive && signedIn),
   })
 }
 

@@ -7,6 +7,8 @@ import type {
 } from "../services/vas/types"
 import type { MessageTrafficLog } from "../../modules/traffic/TrafficLogsView"
 import { env } from "../config/env"
+import { useAppSelector } from "../store"
+import { stopPollingOnAuthError } from "../lib/queryClient"
 
 export interface UseMessagingTrafficParams {
   status?: string
@@ -34,6 +36,7 @@ function mapApiItemToLog(item: any): MessageTrafficLog {
 
 export function useMessagingTraffic(params: UseMessagingTrafficParams = {}) {
   const queryClient = useQueryClient()
+  const signedIn = useAppSelector((state) => state.auth.signedIn)
 
   const apiParams: MessageQueryParams = {
     status: params.status && params.status !== "All Statuses" ? params.status : undefined,
@@ -59,10 +62,20 @@ export function useMessagingTraffic(params: UseMessagingTrafficParams = {}) {
       }
       return []
     },
-    enabled: env.isLive,
+    enabled: env.isLive && signedIn,
     staleTime: 5000,
-    refetchInterval: 15000, // Poll traffic logs every 15s
-    retry: 1,
+    refetchInterval: stopPollingOnAuthError(15000), // Stop polling immediately on 401/403
+    retry: (failureCount, error: any) => {
+      if (
+        error?.status === 401 ||
+        error?.status === 403 ||
+        error?.statusCode === 401 ||
+        error?.statusCode === 403
+      ) {
+        return false
+      }
+      return failureCount < 1
+    },
   })
 
   return {
@@ -76,10 +89,12 @@ export function useMessagingTraffic(params: UseMessagingTrafficParams = {}) {
 }
 
 export function useMessageDetail(id: string | null) {
+  const signedIn = useAppSelector((state) => state.auth.signedIn)
+
   return useQuery({
     queryKey: ["vas", "message-detail", id],
     queryFn: () => (id ? vasClient.getMessageDetail(id) : null),
-    enabled: Boolean(id && env.isLive),
+    enabled: Boolean(id && env.isLive && signedIn),
     staleTime: 10000,
   })
 }

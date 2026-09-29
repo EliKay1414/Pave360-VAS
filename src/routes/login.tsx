@@ -33,10 +33,22 @@ function LoginPage() {
   const [showPassword, setShowPassword] = React.useState(false)
   const [rememberMe, setRememberMe] = React.useState(true)
 
+  const [formAttempt, setFormAttempt] = React.useState(0)
+  const [initialEmail, setInitialEmail] = React.useState(
+    () => (typeof window !== "undefined" ? localStorage.getItem("pave360_vas_login_email") || "" : "")
+  )
+
   const loginForm = useForm<LoginFormValues>({
     defaultValues: {
-      email: typeof window !== "undefined" ? localStorage.getItem("pave360_vas_login_email") || "" : "",
+      email: initialEmail,
       password: "",
+    },
+    values: {
+      email: initialEmail,
+      password: "",
+    },
+    resetOptions: {
+      keepDirtyValues: false,
     },
   })
 
@@ -61,7 +73,9 @@ function LoginPage() {
       const res = await completeLogin(data.email, data.password, rememberMe)
       if (!res.ok) {
         setError(res.error)
-        loginForm.resetField("password")
+        setInitialEmail(data.email.trim())
+        // Remount form key to immediately reset browser credential manager autofill state
+        setFormAttempt((k) => k + 1)
         setLoading(false)
         return
       }
@@ -135,6 +149,7 @@ function LoginPage() {
                   </p>
 
                   <form
+                    key={`auth-form-${formAttempt}`}
                     method="post"
                     action="#"
                     name="loginForm"

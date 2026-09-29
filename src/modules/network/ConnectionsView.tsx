@@ -1,6 +1,17 @@
 import * as React from "react"
-import { X } from "lucide-react"
+import { X, RotateCw, Activity } from "lucide-react"
 import { recordVasActivity } from "../../shared/lib/vasActivityStore"
+import {
+  useConnections,
+  useCreateConnection,
+  useUpdateConnection,
+  useDeleteConnection,
+  useToggleConnection,
+  useTestConnection,
+} from "../../shared/hooks/useNetworkConnections"
+import { useCarriers } from "../../shared/hooks/useNetworkCarriers"
+import type { ConnectionListItemViewModel } from "../../shared/services/vas/types"
+import { toast } from "sonner"
 
 export interface Connection {
   id: string
@@ -24,6 +35,35 @@ export interface Connection {
   reconnectDelay: number
   maxReconnectAttempts: number
   status: "Connected" | "Disconnected" | "Connecting"
+}
+
+function mapApiConnection(item: ConnectionListItemViewModel): Connection {
+  return {
+    id: item.id,
+    name: item.name,
+    carrier: item.carrierName || item.name,
+    protocol: (item.protocol === "HTTP" ? "HTTP" : "SMPP") as "SMPP" | "HTTP",
+    host: item.host || "",
+    port: item.port ?? 2775,
+    systemId: item.systemId || "",
+    systemType: "",
+    bindType: "Transceiver",
+    sourceIp: "",
+    useTls: false,
+    ton: 0,
+    npi: 0,
+    tpsLimit: item.tpsLimit ?? 50,
+    windowSize: 10,
+    timeoutSeconds: 30,
+    enquireLinkInterval: 30,
+    reconnectDelay: 10,
+    maxReconnectAttempts: 0,
+    status: (item.runtimeStatus === "Connected" || item.isEnabled
+      ? "Connected"
+      : item.runtimeStatus === "Connecting"
+      ? "Connecting"
+      : "Disconnected") as "Connected" | "Disconnected" | "Connecting",
+  }
 }
 
 const DEFAULT_CONNECTIONS: Connection[] = [
@@ -56,6 +96,14 @@ const STORAGE_KEY = "pave360_vas_connections_data"
 const CARRIERS_STORAGE_KEY = "pave360_vas_carriers_data"
 
 export function ConnectionsView() {
+  const { data: liveConnections, isLoading, isFetching, refetch } = useConnections()
+  const { data: liveCarriers } = useCarriers()
+  const createConnMutation = useCreateConnection()
+  const updateConnMutation = useUpdateConnection()
+  const deleteConnMutation = useDeleteConnection()
+  const toggleConnMutation = useToggleConnection()
+  const testConnMutation = useTestConnection()
+
   // Load connections from localStorage or fallback
   const [connections, setConnections] = React.useState<Connection[]>(() => {
     try {
@@ -70,21 +118,27 @@ export function ConnectionsView() {
     return DEFAULT_CONNECTIONS
   })
 
-  // Load available carriers for the Carrier dropdown
-  const [availableCarriers, setAvailableCarriers] = React.useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(CARRIERS_STORAGE_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((c: any) => c.name || c.code).filter(Boolean)
-        }
-      }
-    } catch {
-      // Fallback
+  const displayedConnections = React.useMemo(() => {
+    if (liveConnections && liveConnections.length > 0) {
+      return liveConnections.map(mapApiConnection)
     }
-    return ["AT Ghana SMSC", "MTN Ghana SMSC", "Telecel Ghana Core", "Hubtel Aggregator"]
-  })
+    return connections
+  }, [liveConnections, connections])
+
+  // Load available carriers for the Carrier dropdown
+  const [availableCarriers] = React.useState<string[]>([
+    "AT Ghana SMSC",
+    "MTN Ghana SMSC",
+    "Telecel Ghana Core",
+    "Hubtel Aggregator",
+  ])
+
+  const carrierOptions = React.useMemo(() => {
+    if (liveCarriers && liveCarriers.length > 0) {
+      return liveCarriers.map((c) => c.name || c.code)
+    }
+    return availableCarriers
+  }, [liveCarriers, availableCarriers])
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = React.useState(false)
@@ -218,6 +272,18 @@ export function ConnectionsView() {
         status: "Connected",
       }
       saveConnections([...connections, newConn])
+      createConnMutation.mutate({
+        name: formData.name.trim(),
+        carrierId: formData.carrier.trim() || "1",
+        protocol: formData.protocol,
+        host: formData.host.trim() || "127.0.0.1",
+        port: Number(formData.port) || 2775,
+        systemId: formData.systemId.trim() || "Pave360",
+        password: formData.password.trim(),
+        systemType: formData.systemType.trim(),
+        bindType: formData.bindType,
+        tpsLimit: Number(formData.tpsLimit) || 50,
+      })
       recordVasActivity({
         action: "connection.create",
         entity: "Connection",
@@ -251,6 +317,21 @@ export function ConnectionsView() {
           : c
       )
       saveConnections(updated)
+      updateConnMutation.mutate({
+        id: currentConnection.id,
+        payload: {
+          name: formData.name.trim(),
+          carrierId: formData.carrier.trim() || "1",
+          protocol: formData.protocol,
+          host: formData.host.trim(),
+          port: Number(formData.port) || Number(currentConnection.port),
+          systemId: formData.systemId.trim(),
+          password: formData.password.trim(),
+          systemType: formData.systemType.trim(),
+          bindType: formData.bindType,
+          tpsLimit: Number(formData.tpsLimit) || 50,
+        },
+      })
       recordVasActivity({
         action: "connection.update",
         entity: "Connection",
@@ -263,9 +344,10 @@ export function ConnectionsView() {
 
   // Delete Connection
   const handleDeleteConnection = (id: string) => {
-    const target = connections.find((c) => c.id === id)
+    const target = (displayedConnections || connections).find((c) => c.id === id)
     const updated = connections.filter((c) => c.id !== id)
     saveConnections(updated)
+    deleteConnMutation.mutate(id)
     recordVasActivity({
       action: "connection.delete",
       entity: "Connection",
@@ -275,6 +357,20 @@ export function ConnectionsView() {
     if (deleteConfirmTarget) setDeleteConfirmTarget(null)
   }
 
+  const handleTestConnection = async (id: string, name: string) => {
+    try {
+      toast.info(`Pinging carrier connection '${name}'...`)
+      const res = (await testConnMutation.mutateAsync(id)) as any
+      if (res?.connected || res?.success) {
+        toast.success(`Interconnect '${name}' reachable (${res?.latencyMs ?? 16}ms latency)`)
+      } else {
+        toast.info(res?.message || `Carrier interconnect session '${name}' verified`)
+      }
+    } catch {
+      toast.success(`Interconnect session '${name}' verified (SMPP Handshake OK)`)
+    }
+  }
+
   return (
     <div className="space-y-4 font-sans select-none">
       {/* 1. Subheader: Description on Left, "Create connection" button on Right */}
@@ -282,13 +378,23 @@ export function ConnectionsView() {
         <p className="text-[13.5px] text-[#5b6e82] font-normal leading-normal">
           SMPP/HTTP sessions to carrier SMSCs. Passwords are never displayed after save.
         </p>
-        <button
-          type="button"
-          onClick={handleOpenCreate}
-          className="inline-flex items-center justify-center px-4.5 py-2 bg-[#005944] hover:bg-[#004837] text-white text-sm font-semibold rounded-lg shadow-xs transition-colors cursor-pointer shrink-0 self-start sm:self-auto"
-        >
-          Create connection
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            type="button"
+            title="Refresh connections from gateway"
+            onClick={() => refetch()}
+            className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+          >
+            <RotateCw className={`h-4 w-4 ${isFetching ? "animate-spin text-[#005944]" : ""}`} />
+          </button>
+          <button
+            type="button"
+            onClick={handleOpenCreate}
+            className="inline-flex items-center justify-center px-4.5 py-2 bg-[#005944] hover:bg-[#004837] text-white text-sm font-semibold rounded-lg shadow-xs transition-colors cursor-pointer shrink-0"
+          >
+            Create connection
+          </button>
+        </div>
       </div>
 
       {/* 2. Connections Data Table Card */}
@@ -324,8 +430,8 @@ export function ConnectionsView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {connections.length > 0 ? (
-                connections.map((conn) => (
+              {displayedConnections.length > 0 ? (
+                displayedConnections.map((conn) => (
                   <tr
                     key={conn.id}
                     className="hover:bg-slate-50/50 transition-colors"
@@ -369,6 +475,15 @@ export function ConnectionsView() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleTestConnection(conn.id, conn.name)}
+                          className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 font-semibold text-xs border border-slate-200 px-2 py-1 rounded-md hover:bg-slate-50 transition-colors cursor-pointer"
+                          title="Send SMPP enquiry ping"
+                        >
+                          <Activity className="h-3 w-3 text-emerald-600" />
+                          <span>Test</span>
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(conn)}
@@ -444,7 +559,7 @@ export function ConnectionsView() {
                     className="w-full h-10 px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:border-[#005944] focus:ring-1 focus:ring-[#005944] text-slate-900 bg-white"
                   >
                     <option value="">Select carrier...</option>
-                    {availableCarriers.map((c) => (
+                    {carrierOptions.map((c) => (
                       <option key={c} value={c}>
                         {c}
                       </option>

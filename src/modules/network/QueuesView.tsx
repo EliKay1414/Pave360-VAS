@@ -1,5 +1,6 @@
 import * as React from "react"
 import { RotateCw, X } from "lucide-react"
+import { useNetworkQueues } from "../../shared/hooks/useNetworkQueues"
 
 export interface QueueChannelMetric {
   id: string
@@ -107,70 +108,80 @@ const DEFAULT_TRANSACTIONS: QueueTransaction[] = [
 ]
 
 export function QueuesView() {
+  const { data: queueData, isFetching, refetch } = useNetworkQueues()
   const [isRefreshing, setIsRefreshing] = React.useState(false)
   const [selectedMessage, setSelectedMessage] = React.useState<QueueTransaction | null>(null)
 
   // Dynamic Provider & Batch details
-  const [providerInfo] = React.useState({
-    engineState: "Engine Healthy",
-    provider: "InMemory",
-    workerBatch: "25ms",
-    engineSubtitle: "SMPP: Live",
-  })
+  const providerInfo = React.useMemo(() => {
+    return {
+      engineState: "Engine Healthy",
+      provider: queueData?.provider || "InMemory",
+      workerBatch: `${queueData?.workerBatchDelayMs ?? 25}ms`,
+      engineSubtitle: `SMPP: ${queueData?.smppSubmitMode || "Live"}`,
+    }
+  }, [queueData])
 
   // Pipeline stages counts
-  const [pipelineStages, setPipelineStages] = React.useState<PipelineStage[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_METRICS_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
-      }
-    } catch {
-      // Fallback
-    }
+  const [pipelineStages] = React.useState<PipelineStage[]>([
+    { id: "queued", name: "QUEUED", count: 0, description: "Waiting for worker", color: "slate" },
+    { id: "processing", name: "PROCESSING", count: 0, description: "In carrier dispatch loop", color: "blue" },
+    { id: "submitted", name: "SUBMITTED", count: 0, description: "Awaiting SMSC DLR", color: "indigo" },
+    { id: "delivered", name: "DELIVERED", count: 16, description: "Confirmed delivered", color: "emerald" },
+    { id: "failed", name: "FAILED", count: 6, description: "Rejected / Undelivered", color: "red" },
+  ])
+
+  const displayedStages = React.useMemo(() => {
+    if (!queueData) return pipelineStages
     return [
-      { id: "queued", name: "QUEUED", count: 0, description: "Waiting for worker", color: "slate" },
-      { id: "processing", name: "PROCESSING", count: 0, description: "In carrier dispatch loop", color: "blue" },
-      { id: "submitted", name: "SUBMITTED", count: 0, description: "Awaiting SMSC DLR", color: "indigo" },
-      { id: "delivered", name: "DELIVERED", count: 16, description: "Confirmed delivered", color: "emerald" },
-      { id: "failed", name: "FAILED", count: 6, description: "Rejected / Undelivered", color: "red" },
+      { id: "queued", name: "QUEUED", count: queueData.queuedCount ?? 0, description: "Waiting for worker", color: "slate" as const },
+      { id: "processing", name: "PROCESSING", count: queueData.processingCount ?? 0, description: "In carrier dispatch loop", color: "blue" as const },
+      { id: "submitted", name: "SUBMITTED", count: queueData.submittedCount ?? 0, description: "Awaiting SMSC DLR", color: "indigo" as const },
+      { id: "delivered", name: "DELIVERED", count: queueData.deliveredCount ?? 16, description: "Confirmed delivered", color: "emerald" as const },
+      { id: "failed", name: "FAILED", count: queueData.failedCount ?? 6, description: "Rejected / Undelivered", color: "red" as const },
     ]
-  })
+  }, [queueData, pipelineStages])
 
   // Background Workers
-  const [workers, setWorkers] = React.useState<BackgroundWorker[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_WORKERS_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
-      }
-    } catch {
-      // Fallback
+  const [workers, setWorkers] = React.useState<BackgroundWorker[]>(DEFAULT_WORKERS)
+
+  const displayedWorkers = React.useMemo(() => {
+    if (queueData?.workers && queueData.workers.length > 0) {
+      return queueData.workers.map((w, idx) => ({
+        id: String(idx + 1),
+        name: w.name,
+        role: w.role || "Background Worker",
+        targetChannel: w.queueConsumed || "sms.submit",
+        status: (w.isHealthy ? "Healthy" : "Degraded") as "Healthy" | "Degraded" | "Stale",
+        lastHeartbeat: w.lastBeat ? new Date(w.lastBeat).toLocaleTimeString() : "Just now",
+      }))
     }
-    return DEFAULT_WORKERS
-  })
+    return workers
+  }, [queueData, workers])
 
   // Recent Queue Traffic
-  const [transactions, setTransactions] = React.useState<QueueTransaction[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_TRAFFIC_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
-      }
-    } catch {
-      // Fallback
+  const [transactions] = React.useState<QueueTransaction[]>(DEFAULT_TRANSACTIONS)
+
+  const displayedTransactions = React.useMemo(() => {
+    if (queueData?.recentMessages && queueData.recentMessages.length > 0) {
+      return queueData.recentMessages.map((m) => ({
+        id: m.publicId,
+        sender: m.source || "Pave360",
+        destination: m.destination || "",
+        encoding: m.encoding || "Gsm7",
+        segments: m.segmentCount ?? 1,
+        status: (m.status as any) || "Submitted",
+        created: m.createdAt ? new Date(m.createdAt).toLocaleTimeString() : "Just now",
+      }))
     }
-    return DEFAULT_TRANSACTIONS
-  })
+    return transactions
+  }, [queueData, transactions])
 
   // Handle Refresh Action
   const handleRefresh = () => {
+    refetch()
     setIsRefreshing(true)
     setTimeout(() => {
-      // Refresh current time for heartbeats
       const now = new Date()
       const timeStr = now.toTimeString().split(" ")[0]
       setWorkers((prev) =>
@@ -187,9 +198,9 @@ export function QueuesView() {
     {
       id: "engine",
       title: "ENGINE",
-      badge: "InMemory",
+      badge: queueData?.provider || "InMemory",
       badgeType: "blue",
-      value: "InMemory",
+      value: queueData?.provider || "InMemory",
       channelChip: "",
       subtext: providerInfo.engineSubtitle,
     },
@@ -197,37 +208,37 @@ export function QueuesView() {
       id: "outbound",
       title: "OUTBOUND",
       badgeType: "green-dot",
-      value: 0,
-      channelChip: "sms.submit",
+      value: queueData?.submitDepth ?? 0,
+      channelChip: queueData?.submitQueueName || "sms.submit",
     },
     {
       id: "dlr",
       title: "DLR PIPELINE",
       badgeType: "green-dot",
-      value: 0,
-      channelChip: "sms.dlr",
+      value: queueData?.dlrDepth ?? 0,
+      channelChip: queueData?.dlrQueueName || "sms.dlr",
     },
     {
       id: "webhooks",
       title: "WEBHOOKS",
       badgeType: "green-dot",
-      value: 0,
-      channelChip: "sms.webhook",
+      value: queueData?.webhookDepth ?? 0,
+      channelChip: queueData?.webhookQueueName || "sms.webhook",
     },
     {
       id: "inbound",
       title: "INBOUND MO",
       badgeType: "green-dot",
-      value: 0,
-      channelChip: "sms.inbound",
+      value: queueData?.inboundDepth ?? 0,
+      channelChip: queueData?.inboundQueueName || "sms.inbound",
     },
     {
       id: "retry",
       title: "RETRY BUFFER",
-      badge: "Max 3",
+      badge: `Max ${queueData?.maxRetryAttempts ?? 3}`,
       badgeType: "gray",
       value: "—",
-      channelChip: "sms.retry",
+      channelChip: queueData?.retryQueueName || "sms.retry",
     },
   ]
 
@@ -358,7 +369,7 @@ export function QueuesView() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-3">
-          {pipelineStages.map((stage) => (
+          {displayedStages.map((stage) => (
             <div
               key={stage.id}
               className={`rounded-xl border border-slate-200 border-t-4 ${getStageBorderColor(
@@ -386,7 +397,7 @@ export function QueuesView() {
             ACTIVE BACKGROUND WORKERS
           </span>
           <span className="text-xs font-medium text-[#7c8ea2]">
-            {workers.length} Workers Online
+            {displayedWorkers.length} Workers Online
           </span>
         </div>
 
@@ -412,7 +423,7 @@ export function QueuesView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {workers.map((worker) => (
+              {displayedWorkers.map((worker) => (
                 <tr key={worker.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-3.5 whitespace-nowrap font-mono text-xs font-semibold text-slate-900">
                     {worker.name}
@@ -487,7 +498,7 @@ export function QueuesView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {transactions.map((tx) => (
+              {displayedTransactions.map((tx) => (
                 <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-3.5 whitespace-nowrap">
                     <button

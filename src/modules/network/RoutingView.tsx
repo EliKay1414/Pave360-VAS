@@ -1,5 +1,16 @@
 import * as React from "react"
-import { X } from "lucide-react"
+import { X, RotateCw } from "lucide-react"
+import {
+  useRoutes,
+  useCreateRoute,
+  useUpdateRoute,
+  useDeleteRoute,
+  useToggleRoute,
+  useSimulateRoute,
+} from "../../shared/hooks/useNetworkRouting"
+import { useCarriers } from "../../shared/hooks/useNetworkCarriers"
+import { useConnections } from "../../shared/hooks/useNetworkConnections"
+import type { RouteListItemViewModel } from "../../shared/services/vas/types"
 
 export interface RouteRule {
   id: string
@@ -15,6 +26,24 @@ export interface RouteRule {
   prefix: string
   regexPattern: string
   rulesCount?: number
+}
+
+function mapApiRoute(item: RouteListItemViewModel): RouteRule {
+  return {
+    id: item.id,
+    name: item.name,
+    description: "",
+    priority: item.priority ?? 100,
+    enabled: item.isEnabled ?? true,
+    primaryCarrier: item.primaryCarrierName || "AT Ghana SMSC",
+    primaryConnection: item.primaryCarrierName || "AT Ghana SMSC",
+    secondaryCarrier: item.secondaryCarrierName || "None",
+    secondaryConnection: item.secondaryCarrierName || "None",
+    countryCode: "GH",
+    prefix: "",
+    regexPattern: "",
+    rulesCount: item.ruleCount ?? 1,
+  }
 }
 
 const DEFAULT_ROUTES: RouteRule[] = [
@@ -40,6 +69,15 @@ const CARRIERS_STORAGE_KEY = "pave360_vas_carriers_data"
 const CONNECTIONS_STORAGE_KEY = "pave360_vas_connections_data"
 
 export function RoutingView() {
+  const { data: liveRoutes, isLoading, isFetching, refetch } = useRoutes()
+  const { data: liveCarriers } = useCarriers()
+  const { data: liveConnections } = useConnections()
+  const createRouteMutation = useCreateRoute()
+  const updateRouteMutation = useUpdateRoute()
+  const deleteRouteMutation = useDeleteRoute()
+  const toggleRouteMutation = useToggleRoute()
+  const simulateRouteMutation = useSimulateRoute()
+
   // Load routes from localStorage or fallback
   const [routes, setRoutes] = React.useState<RouteRule[]>(() => {
     try {
@@ -53,6 +91,13 @@ export function RoutingView() {
     }
     return DEFAULT_ROUTES
   })
+
+  const displayedRoutes = React.useMemo(() => {
+    if (liveRoutes && liveRoutes.length > 0) {
+      return liveRoutes.map(mapApiRoute)
+    }
+    return routes
+  }, [liveRoutes, routes])
 
   // Load available carriers
   const [availableCarriers] = React.useState<string[]>(() => {
@@ -197,6 +242,17 @@ export function RoutingView() {
         rulesCount,
       }
       saveRoutes([...routes, newRoute])
+      createRouteMutation.mutate({
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        priority: Number(formData.priority) || 100,
+        isEnabled: formData.enabled,
+        primaryCarrierId: formData.primaryCarrier.trim() || "1",
+        primaryConnectionId: formData.primaryConnection.trim() || undefined,
+        secondaryCarrierId: formData.secondaryCarrier.trim() || undefined,
+        secondaryConnectionId: formData.secondaryConnection.trim() || undefined,
+        countryCode: formData.countryCode.trim() || "GH",
+      })
     } else if (modalMode === "edit" && currentRoute) {
       const updated = routes.map((r) =>
         r.id === currentRoute.id
@@ -218,6 +274,20 @@ export function RoutingView() {
           : r
       )
       saveRoutes(updated)
+      updateRouteMutation.mutate({
+        id: currentRoute.id,
+        payload: {
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          priority: Number(formData.priority) || 100,
+          isEnabled: formData.enabled,
+          primaryCarrierId: formData.primaryCarrier.trim() || "1",
+          primaryConnectionId: formData.primaryConnection.trim() || undefined,
+          secondaryCarrierId: formData.secondaryCarrier.trim() || undefined,
+          secondaryConnectionId: formData.secondaryConnection.trim() || undefined,
+          countryCode: formData.countryCode.trim() || "GH",
+        },
+      })
     }
 
     handleCloseModal()
@@ -227,6 +297,7 @@ export function RoutingView() {
   const handleDeleteRoute = (id: string) => {
     const updated = routes.filter((r) => r.id !== id)
     saveRoutes(updated)
+    deleteRouteMutation.mutate(id)
     if (isModalOpen) handleCloseModal()
     if (deleteConfirmTarget) setDeleteConfirmTarget(null)
   }
@@ -238,13 +309,23 @@ export function RoutingView() {
         <p className="text-[13.5px] text-[#5b6e82] font-normal leading-normal">
           Least-cost among healthy primary/secondary connections. Disconnected binds are skipped.
         </p>
-        <button
-          type="button"
-          onClick={handleOpenCreate}
-          className="inline-flex items-center justify-center px-4.5 py-2 bg-[#005944] hover:bg-[#004837] text-white text-sm font-semibold rounded-lg shadow-xs transition-colors cursor-pointer shrink-0 self-start sm:self-auto"
-        >
-          Create route
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            type="button"
+            title="Refresh routes from gateway"
+            onClick={() => refetch()}
+            className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+          >
+            <RotateCw className={`h-4 w-4 ${isFetching ? "animate-spin text-[#005944]" : ""}`} />
+          </button>
+          <button
+            type="button"
+            onClick={handleOpenCreate}
+            className="inline-flex items-center justify-center px-4.5 py-2 bg-[#005944] hover:bg-[#004837] text-white text-sm font-semibold rounded-lg shadow-xs transition-colors cursor-pointer shrink-0"
+          >
+            Create route
+          </button>
+        </div>
       </div>
 
       {/* 2. Routes Data Table Card */}
@@ -277,8 +358,8 @@ export function RoutingView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {routes.length > 0 ? (
-                routes.map((route) => (
+              {displayedRoutes.length > 0 ? (
+                displayedRoutes.map((route) => (
                   <tr
                     key={route.id}
                     className="hover:bg-slate-50/50 transition-colors"

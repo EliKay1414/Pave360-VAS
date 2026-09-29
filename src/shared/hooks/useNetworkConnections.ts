@@ -4,21 +4,40 @@ import type {
   ConnectionListItemViewModel,
   ConnectionFormViewModel,
 } from "../services/vas/types"
+import { env } from "../config/env"
+import { useAppSelector } from "../store"
+import { stopPollingOnAuthError } from "../lib/queryClient"
 
 export function useConnections(carrierId?: string) {
+  const signedIn = useAppSelector((state) => state.auth.signedIn)
+
   return useQuery<ConnectionListItemViewModel[]>({
     queryKey: ["vas", "connections", carrierId ?? "all"],
     queryFn: () => vasClient.getConnections(carrierId),
+    enabled: env.isLive && signedIn,
     staleTime: 10_000,
-    refetchInterval: 15_000,
+    refetchInterval: stopPollingOnAuthError(15_000),
+    retry: (failureCount, error: any) => {
+      if (
+        error?.status === 401 ||
+        error?.status === 403 ||
+        error?.statusCode === 401 ||
+        error?.statusCode === 403
+      ) {
+        return false
+      }
+      return failureCount < 1
+    },
   })
 }
 
 export function useConnectionDetail(id?: string) {
+  const signedIn = useAppSelector((state) => state.auth.signedIn)
+
   return useQuery<ConnectionFormViewModel>({
     queryKey: ["vas", "connection", id],
     queryFn: () => vasClient.getConnection(id!),
-    enabled: Boolean(id),
+    enabled: Boolean(id && env.isLive && signedIn),
   })
 }
 
