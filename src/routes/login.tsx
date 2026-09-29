@@ -61,6 +61,7 @@ function LoginPage() {
       const res = await completeLogin(data.email, data.password, rememberMe)
       if (!res.ok) {
         setError(res.error)
+        loginForm.resetField("password")
         setLoading(false)
         return
       }
@@ -68,11 +69,10 @@ function LoginPage() {
         setLoading(false)
         return
       }
-      switchPersona("ADMIN")
-      await navigate({ to: "/dashboard", replace: true })
+      // Instant router transition to dashboard without lingering in loading state
+      navigate({ to: "/dashboard", replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Unable to sign in. Please verify your credentials.")
-    } finally {
       setLoading(false)
     }
   }
@@ -135,6 +135,9 @@ function LoginPage() {
                   </p>
 
                   <form
+                    method="post"
+                    action="#"
+                    name="loginForm"
                     onSubmit={loginForm.handleSubmit(onLoginSubmit)}
                     className="mt-6 space-y-4"
                     data-auth-form
@@ -149,6 +152,7 @@ function LoginPage() {
                         type="email"
                         autoComplete="username"
                         autoFocus
+                        onFocus={(e) => e.target.select()}
                         placeholder="you@carrier.com"
                         className="telemetry-input-light"
                         {...loginForm.register("email", {
@@ -168,7 +172,7 @@ function LoginPage() {
 
                     {/* Password Field with Show/Hide Toggle */}
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="Password">
+                      <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="authPasswordInput">
                         Password
                       </label>
                       <div className="relative flex items-center">
@@ -244,8 +248,11 @@ function LoginPage() {
                       <button
                         type="submit"
                         disabled={loading}
-                        className="telemetry-btn-primary-light"
+                        className="telemetry-btn-primary-light flex items-center justify-center gap-2"
                       >
+                        {loading && (
+                          <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+                        )}
                         <span>{loading ? "Signing in…" : "Sign in to gateway"}</span>
                       </button>
                     </div>

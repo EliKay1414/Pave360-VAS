@@ -46,17 +46,26 @@ function ThemeApplier() {
 }
 
 function AuthSessionInitializer() {
-  const { checkSession, signedIn } = useAuth()
-  const { pathname } = useLocation()
-  const isAuthPage = pathname === "/login" || pathname === "/logout" || pathname === "/register"
+  const { checkSession, signedIn, user } = useAuth()
+  const hasChecked = React.useRef(false)
 
   React.useEffect(() => {
+    if (hasChecked.current) return
+    hasChecked.current = true
+
+    if (typeof window === "undefined") return
+    const pathname = window.location.pathname
+    const isAuthPage = pathname.includes("/login") || pathname.includes("/logout") || pathname.includes("/register")
     if (isAuthPage) return
-    const hasSavedAuth = typeof window !== "undefined" && localStorage.getItem("pave360_vas_authenticated") === "true"
-    if (!signedIn && !hasSavedAuth) return
+
+    // If operator session is already active & hydrated, skip speculative auth/me call
+    if (signedIn && user?.email) return
+
+    const hasSavedAuth = localStorage.getItem("pave360_vas_authenticated") === "true"
+    if (!hasSavedAuth) return
 
     checkSession().catch(() => undefined)
-  }, [checkSession, isAuthPage, signedIn])
+  }, [checkSession, signedIn, user?.email])
 
   return null
 }

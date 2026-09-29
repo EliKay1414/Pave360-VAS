@@ -47,42 +47,58 @@ export class VasClient extends Pave360Client {
       ...(options.headers as Record<string, string>),
     }
 
-    const token = this.getAccessToken()
+    // Do NOT send Bearer token on auth routes to avoid conflicting with ASP.NET Core cookie auth
+    const isAuthRoute = path.startsWith("/api/v1/auth")
+    const token = !isAuthRoute ? this.getAccessToken() : null
     if (token) {
       headers.Authorization = `Bearer ${token}`
     }
 
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30000) // 30-second safe timeout for remote gateway hashing
+    const signal = options.signal || controller.signal
+
     const url = `${this.vasBaseUrl}${path}`
-    const res = await fetch(url, {
-      ...options,
-      headers,
-      credentials: "include", // Ensures ASP.NET Core session cookie is sent and received
-    })
+    try {
+      const res = await fetch(url, {
+        ...options,
+        headers,
+        credentials: "include", // Ensures ASP.NET Core session cookie is sent and received
+        signal,
+      })
+      clearTimeout(timeout)
 
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      let message =
-        (body as { detail?: string })?.detail ||
-        (body as { title?: string })?.title ||
-        (body as { message?: string })?.message ||
-        (body as { error?: { message?: string } })?.error?.message
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        let message =
+          (body as { detail?: string })?.detail ||
+          (body as { title?: string })?.title ||
+          (body as { message?: string })?.message ||
+          (body as { error?: { message?: string } })?.error?.message
 
-      if (!message && (body as { errors?: Record<string, string[]> })?.errors) {
-        const errs = (body as { errors: Record<string, string[]> }).errors
-        const firstField = Object.keys(errs)[0]
-        if (firstField && errs[firstField]?.[0]) {
-          message = errs[firstField][0]
+        if (!message && (body as { errors?: Record<string, string[]> })?.errors) {
+          const errs = (body as { errors: Record<string, string[]> }).errors
+          const firstField = Object.keys(errs)[0]
+          if (firstField && errs[firstField]?.[0]) {
+            message = errs[firstField][0]
+          }
         }
+
+        if (!message) {
+          message = `VAS API Error: ${res.status} ${res.statusText}`
+        }
+        throw new Pave360ApiError(message, res.status, body)
       }
 
-      if (!message) {
-        message = `VAS API Error: ${res.status} ${res.statusText}`
+      if (res.status === 204) return undefined as T
+      return (await res.json()) as T
+    } catch (err: unknown) {
+      clearTimeout(timeout)
+      if ((err as Error)?.name === "AbortError") {
+        throw new Pave360ApiError("Gateway request timed out. Please check network connection.", 408)
       }
-      throw new Pave360ApiError(message, res.status, body)
+      throw err
     }
-
-    if (res.status === 204) return undefined as T
-    return (await res.json()) as T
   }
 
   // --- 0. Authentication (ASP.NET Core Cookie Auth) ---

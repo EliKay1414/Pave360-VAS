@@ -59,6 +59,8 @@ export function mapDashboardViewModelToMetrics(
   }
 }
 
+import { stopPollingOnAuthError } from "../lib/queryClient"
+
 export function useDashboardAnalytics() {
   const fallbackTelemetry = useVasTelemetry()
 
@@ -66,9 +68,19 @@ export function useDashboardAnalytics() {
     queryKey: ["vas", "dashboard", "analytics"],
     queryFn: () => vasClient.getDashboard(),
     enabled: env.isLive,
-    refetchInterval: 10000, // Poll every 10 seconds for real-time telemetry updates
+    refetchInterval: stopPollingOnAuthError(10000), // Stop polling if 401/403
     staleTime: 5000,
-    retry: 1,
+    retry: (failureCount, error: any) => {
+      if (
+        error?.status === 401 ||
+        error?.status === 403 ||
+        error?.statusCode === 401 ||
+        error?.statusCode === 403
+      ) {
+        return false
+      }
+      return failureCount < 1
+    },
   })
 
   const isLive = Boolean(query.data && !query.isError)

@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router"
+import { Link, useNavigate } from "@tanstack/react-router"
 import { LogOut } from "lucide-react"
 import {
   TOP_NAV_ITEM,
@@ -20,7 +20,8 @@ export function SidebarContent({
   location,
   onLinkClick,
 }: SidebarContentProps) {
-  const { user: authUser } = useAuth()
+  const navigate = useNavigate()
+  const { user: authUser, signOut } = useAuth()
   const activeUser = propUser || authUser
 
   const email = activeUser?.email?.trim() || ""
@@ -138,14 +139,18 @@ export function SidebarContent({
               {email || "admin@pave360.com"}
             </span>
           </div>
-          <Link
-            to="/logout"
+          <button
+            type="button"
             title="Log out"
-            onClick={onLinkClick}
+            onClick={async () => {
+              onLinkClick()
+              await signOut()
+              navigate({ to: "/login" })
+            }}
             className="text-[#7e95ab] hover:text-white p-1 rounded transition-colors shrink-0 cursor-pointer"
           >
             <LogOut className="h-4 w-4" />
-          </Link>
+          </button>
         </div>
       </div>
     </div>

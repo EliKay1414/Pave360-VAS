@@ -132,12 +132,14 @@ export async function loginOperator(
 
     if (apiErr.data?.detail && typeof apiErr.data.detail === "string") {
       errorMsg = apiErr.data.detail
-    } else if (errorMsg === "Failed to fetch" || errorMsg.toLowerCase().includes("network")) {
-      errorMsg = "Unable to reach https://vas.pave360.com. Please check server status and CORS configuration."
+    } else if (status === 408) {
+      errorMsg = "Gateway request timed out. The server is taking longer than expected. Please try again."
+    } else if (errorMsg === "Failed to fetch") {
+      errorMsg = "Unable to connect to https://vas.pave360.com. Please check your internet connection or server status."
     }
 
     // Return real validation/auth errors
-    if (status === 400 || status === 401 || status === 423) {
+    if (status === 400 || status === 401 || status === 408 || status === 423) {
       return { ok: false, error: errorMsg }
     }
 
@@ -257,8 +259,11 @@ export async function logoutOperator() {
 
   try {
     await vasClient.logoutVas()
-  } catch (err) {
-    console.warn("VAS logout request completed with warning:", err)
+  } catch (err: unknown) {
+    const status = (err as { status?: number })?.status
+    if (status !== 401) {
+      console.warn("VAS logout request completed with warning:", err)
+    }
   }
 }
 
