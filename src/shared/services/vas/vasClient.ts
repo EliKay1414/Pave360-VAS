@@ -28,6 +28,14 @@ import type {
   RoutingSimulationResponse,
   SmppServerStatusResponse,
   QueueDashboardViewModel,
+  SenderIdItemViewModel,
+  RegisterSenderRequest,
+  RegisterSenderResponse,
+  UssdSessionItemViewModel,
+  UssdSessionRequest,
+  UssdSessionResponse,
+  UssdNotifyRequest,
+  UssdNotifyResponse,
 } from "./types"
 
 export class VasClient extends Pave360Client {
@@ -356,12 +364,52 @@ export class VasClient extends Pave360Client {
     return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.traffic.inboundMo)
   }
 
-  getUssdSessions() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.traffic.ussd)
+  // --- 7. Sender IDs (Tag 7: /api/v1/senders) ---
+  getSenderIds(): Promise<SenderIdItemViewModel[]> {
+    return this.vasRequest<any>(VAS_PATHS.traffic.senderIds).then((res) => {
+      if (Array.isArray(res)) return res
+      if (res && Array.isArray(res.senders)) return res.senders
+      if (res && Array.isArray(res.data)) return res.data
+      return []
+    })
   }
 
-  sendUssd(payload: UssdSendPayload) {
-    return this.vasRequest<VasApiResponse<unknown>>(VAS_PATHS.traffic.ussdSend, {
+  registerSenderId(payload: RegisterSenderRequest): Promise<RegisterSenderResponse> {
+    return this.vasRequest<RegisterSenderResponse>(VAS_PATHS.traffic.senderIds, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+  }
+
+  deleteSenderId(id: string): Promise<void> {
+    return this.vasRequest<void>(`${VAS_PATHS.traffic.senderIds}/${id}`, {
+      method: "DELETE",
+    })
+  }
+
+  // --- 4. USSD Gateway (Tag 4: /api/v1/ussd/*) ---
+  getUssdSessions(): Promise<UssdSessionItemViewModel[]> {
+    return this.vasRequest<any>(VAS_PATHS.traffic.ussd).then((res) => {
+      if (Array.isArray(res)) return res
+      if (res && Array.isArray(res.sessions)) return res.sessions
+      if (res && Array.isArray(res.data)) return res.data
+      return []
+    })
+  }
+
+  getUssdSessionDetail(id: string): Promise<UssdSessionItemViewModel> {
+    return this.vasRequest<UssdSessionItemViewModel>(VAS_PATHS.ussd.sessionDetail(id))
+  }
+
+  sendUssdNotify(payload: UssdNotifyRequest): Promise<UssdNotifyResponse> {
+    return this.vasRequest<UssdNotifyResponse>(VAS_PATHS.ussd.notify, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+  }
+
+  simulateUssdSession(payload: UssdSessionRequest): Promise<UssdSessionResponse> {
+    return this.vasRequest<UssdSessionResponse>("/api/v1/ussd/session", {
       method: "POST",
       body: JSON.stringify(payload),
     })

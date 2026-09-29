@@ -388,3 +388,75 @@ export interface QueueDashboardViewModel {
   recentMessages: QueueRecentMessageItem[]
 }
 
+// ==========================================
+// 7. SENDER IDS (Tag 7)
+// ==========================================
+export interface SenderIdItemViewModel {
+  id: string
+  senderId: string
+  type?: "Alphanumeric" | "Shortcode" | "Longcode" | string
+  status: "Approved" | "Pending" | "Rejected" | "Pending Carrier Review" | string
+  country?: string
+  carriers?: string[]
+  purpose?: string
+  documentUrl?: string
+  createdAt?: string
+}
+
+export interface RegisterSenderRequest {
+  senderId: string
+  purpose?: string
+  documentUrl?: string
+  type?: string
+  country?: string
+}
+
+export interface RegisterSenderResponse {
+  success: boolean
+  senderId: string
+  status: string
+}
+
+// ==========================================
+// 4. USSD GATEWAY (Tag 4)
+// ==========================================
+export interface UssdSessionItemViewModel {
+  sessionId: string
+  msisdn: string
+  serviceCode: string
+  type?: "init" | "continue" | "end" | "USSN" | "USSR" | string
+  status: "Delivered" | "Sent" | "Failed" | "Active" | "Completed" | string
+  text?: string
+  message?: string
+  cost?: string
+  startedAt?: string
+  lastActivityAt?: string
+  when?: string
+  ackRequested?: boolean
+}
+
+export interface UssdSessionRequest {
+  sessionId: string
+  msisdn: string
+  serviceCode: string
+  ussdString: string
+  type: "init" | "continue" | "end" | string
+}
+
+export interface UssdSessionResponse {
+  sessionId: string
+  type: string
+  message: string
+}
+
+export interface UssdNotifyRequest {
+  msisdn: string
+  message: string
+}
+
+export interface UssdNotifyResponse {
+  success: boolean
+  status: string
+  cost?: string
+}
+
