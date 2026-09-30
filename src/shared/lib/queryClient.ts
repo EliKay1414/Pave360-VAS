@@ -1,4 +1,4 @@
-import { QueryClient } from "@tanstack/react-query"
+﻿import { QueryClient } from "@tanstack/react-query"
 
 /**
  * Standard enterprise TanStack Query cache presets for React & Vite apps.
@@ -34,8 +34,8 @@ export const QUERY_CONFIG = {
 } as const
 
 /**
- * Halts repeating query refetch intervals if the backend returns 401 (Unauthorized)
- * or 403 (Forbidden), preventing endless browser console error floods.
+ * Halts repeating query refetch intervals if the backend returns 401 (Unauthorized),
+ * 403 (Forbidden), or 404 (Not Found), preventing endless browser console error floods.
  */
 export function stopPollingOnAuthError(intervalMs: number | false) {
   if (intervalMs === false) return false
@@ -44,8 +44,10 @@ export function stopPollingOnAuthError(intervalMs: number | false) {
     if (
       err?.status === 401 ||
       err?.status === 403 ||
+      err?.status === 404 ||
       err?.statusCode === 401 ||
-      err?.statusCode === 403
+      err?.statusCode === 403 ||
+      err?.statusCode === 404
     ) {
       return false
     }
@@ -60,12 +62,14 @@ export const queryClient = new QueryClient({
       gcTime: QUERY_CONFIG.standard.gcTime,
       refetchOnWindowFocus: false,
       retry: (failureCount, error: any) => {
-        // Stop retrying if session is unauthorized or forbidden
+        // Stop retrying if session is unauthorized, forbidden, or resource not found
         if (
           error?.status === 401 ||
           error?.status === 403 ||
+          error?.status === 404 ||
           error?.statusCode === 401 ||
-          error?.statusCode === 403
+          error?.statusCode === 403 ||
+          error?.statusCode === 404
         ) {
           return false
         }

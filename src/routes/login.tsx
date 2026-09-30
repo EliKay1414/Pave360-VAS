@@ -1,4 +1,4 @@
-import * as React from "react"
+﻿import * as React from "react"
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router"
 import { store } from "../shared/store"
 import { useForm } from "react-hook-form"
@@ -195,7 +195,7 @@ function LoginPage() {
                           id="authPasswordInput"
                           type={showPassword ? "text" : "password"}
                           autoComplete="current-password"
-                          placeholder="••••••••••••"
+                          placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                           className="telemetry-input-light pr-10"
                           {...loginForm.register("password", {
                             required: "The Password field is required.",
@@ -268,7 +268,7 @@ function LoginPage() {
                         {loading && (
                           <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
                         )}
-                        <span>{loading ? "Signing in…" : "Sign in to gateway"}</span>
+                        <span>{loading ? "Signing inâ€¦" : "Sign in to gateway"}</span>
                       </button>
                     </div>
                   </form>
@@ -296,7 +296,7 @@ function LoginPage() {
                         type="text"
                         inputMode="numeric"
                         autoFocus
-                        placeholder="••••••"
+                        placeholder="â€¢â€¢â€¢â€¢â€¢â€¢"
                         className="telemetry-input-light text-center font-mono text-lg font-bold tracking-[0.3em]"
                         {...otpForm.register("otp", {
                           required: "Enter the 6-digit code.",
@@ -322,7 +322,7 @@ function LoginPage() {
                         disabled={loading}
                         className="telemetry-btn-primary-light"
                       >
-                        <span>{loading ? "Verifying…" : "Verify and continue"}</span>
+                        <span>{loading ? "Verifyingâ€¦" : "Verify and continue"}</span>
                       </button>
                     </div>
                   </form>
@@ -353,3 +353,4 @@ function LoginPage() {
     </div>
   )
 }
+

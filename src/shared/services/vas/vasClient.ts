@@ -1,4 +1,4 @@
-import { env } from "../../config/env"
+﻿import { env } from "../../config/env"
 import { Pave360Client, Pave360ApiError } from "../core/pave360Client"
 import { VAS_PATHS } from "./paths"
 import type {
@@ -820,3 +820,4 @@ export class VasClient extends Pave360Client {
 
 export const vasClient = new VasClient()
 export const vasApi = vasClient
+
