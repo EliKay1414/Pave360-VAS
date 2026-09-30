@@ -1,4 +1,4 @@
-import {
+﻿import {
   LayoutGrid,
   Wifi,
   Link2,
@@ -31,6 +31,7 @@ export interface AdminNavItem {
   path: string
   icon: LucideIcon
   badgeKey?: string
+  externalUrl?: string
 }
 
 export interface AdminNavGroup {
@@ -73,7 +74,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { id: "DEVELOPER_LOGS", title: "Developer Logs", path: "/developers/logs", icon: Zap },
       { id: "API_KEYS", title: "API Keys", path: "/developers/api-keys", icon: Key },
       { id: "WEBHOOKS", title: "Webhooks", path: "/developers/webhooks", icon: PlusCircle },
-      { id: "API_DOCS", title: "API Documentation", path: "/developers/documentation", icon: BookOpen },
+      {
+        id: "API_DOCS",
+        title: "API Documentation",
+        path: "/developers/documentation",
+        icon: BookOpen,
+        externalUrl: "https://vas.pave360.com/swagger/index.html",
+      },
     ],
   },
   {

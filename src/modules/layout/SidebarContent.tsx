@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router"
+﻿import { Link, useNavigate } from "@tanstack/react-router"
 import { LogOut } from "lucide-react"
 import {
   TOP_NAV_ITEM,
@@ -92,6 +92,24 @@ export function SidebarContent({
               {group.items.map((item) => {
                 const ItemIcon = item.icon
                 const active = isActive(item.path)
+
+                if (item.externalUrl) {
+                  return (
+                    <a
+                      key={item.id}
+                      href={item.externalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={onLinkClick}
+                      className={navItemClass(false)}
+                      title={`${item.title} (Opens Swagger Docs)`}
+                    >
+                      <ItemIcon className={iconClass(false)} />
+                      <span className="truncate">{item.title}</span>
+                    </a>
+                  )
+                }
+
                 return (
                   <Link
                     key={item.id}
@@ -115,6 +133,23 @@ export function SidebarContent({
         {BOTTOM_NAV_ITEMS.map((item) => {
           const ItemIcon = item.icon
           const active = isActive(item.path)
+
+          if (item.externalUrl) {
+            return (
+              <a
+                key={item.id}
+                href={item.externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={onLinkClick}
+                className={navItemClass(false)}
+              >
+                <ItemIcon className={iconClass(false)} />
+                <span className="truncate">{item.title}</span>
+              </a>
+            )
+          }
+
           return (
             <Link
               key={item.id}

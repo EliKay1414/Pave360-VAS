@@ -1,4 +1,4 @@
-import * as React from "react"
+﻿import * as React from "react"
 import { store } from "../store"
 
 export interface VasMetricData {
@@ -38,15 +38,15 @@ export interface VasMetricData {
 const STORAGE_KEY = "pave360_vas_telemetry_v1"
 
 const SEED_DATA: VasMetricData = {
-  messagesToday: 2,
+  messagesToday: 7,
   avgLatency: "0s",
-  messagesThisMonth: 22,
-  deliveryRate: 100,
+  messagesThisMonth: 56,
+  deliveryRate: 0,
   currentTps: 0,
-  submitted: 2,
-  delivered: 2,
+  submitted: 0,
+  delivered: 0,
   failed: 0,
-  pendingQueue: 0,
+  pendingQueue: 42,
   queueDepth: 0,
   platform: {
     tenantsTotal: 2,
@@ -312,3 +312,5 @@ export function useVasTelemetry(): VasMetricData {
     () => SEED_DATA
   )
 }
+
+
