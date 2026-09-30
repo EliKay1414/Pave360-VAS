@@ -12,6 +12,8 @@ const PAGE_SUBTITLES: Record<string, string> = {
   "/senders": "Registered alphanumeric, shortcode, and longcode headers used as Message From",
   "/traffic/reports-billing": "Financial billing ledgers, prepaid reserves, postpaid usage, and carrier metrics.",
   "/reports": "Financial billing ledgers, prepaid reserves, postpaid usage, and carrier metrics.",
+  "/network/queues": "Asynchronous message pipelines, worker heartbeats, and queue depth metrics",
+  "/queues": "Asynchronous message pipelines, worker heartbeats, and queue depth metrics",
 }
 
 export function Header({ onOpenSidebar }: HeaderProps) {

@@ -4,7 +4,7 @@ export interface QueueChannelMetric {
   badge?: string
   badgeType?: "blue" | "gray" | "green-dot"
   value: string | number
-  channelChip: string
+  channelChip?: string
   subtext?: string
 }
 
@@ -31,6 +31,6 @@ export interface QueueTransaction {
   destination: string
   encoding: string
   segments: number
-  status: "Submitted" | "Delivered" | "Queued" | "Failed"
+  status: "Submitted" | "Delivered" | "Queued" | "Failed" | string
   created: string
 }
