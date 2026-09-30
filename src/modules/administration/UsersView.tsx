@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import type { UserItem, UserFormData, UserStatus } from "./users/types"
 import {
   UsersHeader,
@@ -8,11 +8,28 @@ import {
   INITIAL_USERS,
 } from "./users"
 import { recordVasActivity } from "../../shared/lib/vasActivityStore"
+import {
+  useUsers,
+  useCreateUser,
+  useUpdateUser,
+  useToggleUserStatus,
+} from "../../shared/hooks/useUsers"
+import { env } from "../../shared/config/env"
+import { useAppSelector } from "../../shared/store"
 
 const STORAGE_KEY = "pave360_vas_users_data"
 
 export function UsersView() {
-  const [users, setUsers] = useState<UserItem[]>(() => {
+  const signedIn = useAppSelector((state) => state.auth.signedIn)
+  const { data: apiUsers, isLoading } = useUsers()
+  const createUserMutation = useCreateUser()
+  const updateUserMutation = useUpdateUser()
+  const toggleStatusMutation = useToggleUserStatus()
+
+  const [localUsers, setLocalUsers] = useState<UserItem[]>(() => {
+    if (env.isLive && signedIn) {
+      return []
+    }
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
@@ -28,14 +45,44 @@ export function UsersView() {
   const [editingUser, setEditingUser] = useState<UserItem | null>(null)
   const [viewingUser, setViewingUser] = useState<UserItem | null>(null)
 
-  const saveUsers = (updated: UserItem[]) => {
-    setUsers(updated)
+  const saveLocalUsers = (updated: UserItem[]) => {
+    setLocalUsers(updated)
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
     } catch {
       /* ignore */
     }
   }
+
+  const users = useMemo<UserItem[]>(() => {
+    if (apiUsers && Array.isArray(apiUsers) && apiUsers.length > 0) {
+      return apiUsers.map((u) => {
+        const calculatedStatus: UserStatus =
+          u.isActive === false || u.status === "Suspended" ? "Suspended" : "Active"
+        return {
+          id: u.id,
+          name:
+            u.displayName ||
+            `${u.firstName || ""} ${u.lastName || ""}`.trim() ||
+            u.email.split("@")[0],
+          firstName: u.firstName || "",
+          lastName: u.lastName || "",
+          email: u.email,
+          tenant: u.tenantName || "Platform",
+          roles: Array.isArray(u.roles) && u.roles.length > 0 ? u.roles : ["Read Only"],
+          status: calculatedStatus,
+          lastLogin: u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : "Never",
+          createdAt: u.createdAt
+            ? new Date(u.createdAt).toISOString().replace("T", " ").slice(0, 16)
+            : "",
+        }
+      })
+    }
+    if (!env.isLive || !signedIn) {
+      return localUsers
+    }
+    return localUsers.length > 0 ? localUsers : INITIAL_USERS
+  }, [apiUsers, localUsers, signedIn])
 
   const handleOpenCreate = () => {
     setEditingUser(null)
@@ -51,7 +98,15 @@ export function UsersView() {
     setViewingUser(user)
   }
 
-  const handleToggleStatus = (userId: string) => {
+  const handleToggleStatus = async (userId: string) => {
+    if (env.isLive && signedIn) {
+      try {
+        await toggleStatusMutation.mutateAsync(userId)
+      } catch {
+        // fallback
+      }
+    }
+
     const updatedUsers = users.map((u) => {
       if (u.id === userId) {
         const nextStatus: UserStatus = u.status === "Active" ? "Suspended" : "Active"
@@ -68,15 +123,32 @@ export function UsersView() {
       }
       return u
     })
-    saveUsers(updatedUsers)
+    saveLocalUsers(updatedUsers)
   }
 
-  const handleSaveUser = (formData: UserFormData) => {
+  const handleSaveUser = async (formData: UserFormData) => {
     const fullName = `${formData.firstName} ${formData.lastName}`.trim()
     const tenantName = formData.tenant === "pave360" ? "Pave360" : "Platform"
     const nextStatus: UserStatus = formData.isActive === false ? "Suspended" : "Active"
 
     if (editingUser) {
+      if (env.isLive && signedIn) {
+        try {
+          await updateUserMutation.mutateAsync({
+            id: editingUser.id,
+            payload: {
+              email: formData.email,
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              roles: formData.roles,
+              isActive: formData.isActive,
+            },
+          })
+        } catch {
+          // fallback
+        }
+      }
+
       const updatedUsers = users.map((u) => {
         if (u.id === editingUser.id) {
           const updated: UserItem = {
@@ -96,13 +168,28 @@ export function UsersView() {
         }
         return u
       })
-      saveUsers(updatedUsers)
+      saveLocalUsers(updatedUsers)
       recordVasActivity({
         action: "user.update",
         entity: "User",
         summary: `User ${formData.email} details updated`,
       })
     } else {
+      if (env.isLive && signedIn) {
+        try {
+          await createUserMutation.mutateAsync({
+            email: formData.email,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            password: formData.password || "TemporaryPass123!",
+            roles: formData.roles,
+            isActive: formData.isActive,
+          })
+        } catch {
+          // fallback
+        }
+      }
+
       const newUser: UserItem = {
         id: `USR-${Date.now().toString().slice(-3)}`,
         firstName: formData.firstName,
@@ -116,7 +203,7 @@ export function UsersView() {
         createdAt: new Date().toISOString().replace("T", " ").slice(0, 16),
       }
       const updatedUsers = [newUser, ...users]
-      saveUsers(updatedUsers)
+      saveLocalUsers(updatedUsers)
       recordVasActivity({
         action: "user.create",
         entity: "User",
@@ -129,7 +216,7 @@ export function UsersView() {
   return (
     <div className="space-y-6">
       {viewingUser ? (
-        /* Full User Details View matching screenshot */
+        /* Full User Details View */
         <UserDetailsView
           user={viewingUser}
           onBack={() => setViewingUser(null)}
@@ -140,11 +227,18 @@ export function UsersView() {
         /* Standard Users Table View */
         <>
           <UsersHeader onCreateClick={handleOpenCreate} />
-          <UsersTable
-            users={users}
-            onView={handleOpenView}
-            onEdit={handleOpenEdit}
-          />
+          {Boolean(isLoading && env.isLive && (!apiUsers || (apiUsers as any[])?.length === 0)) ? (
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-12 text-center">
+              <div className="inline-block animate-spin w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full mb-3" />
+              <p className="text-xs text-slate-500 font-medium">Loading user accounts from server...</p>
+            </div>
+          ) : (
+            <UsersTable
+              users={users}
+              onView={handleOpenView}
+              onEdit={handleOpenEdit}
+            />
+          )}
         </>
       )}
 

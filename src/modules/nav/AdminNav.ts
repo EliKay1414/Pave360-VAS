@@ -61,9 +61,9 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { id: "TRAFFIC_LOGS", title: "Traffic Logs", path: "/traffic/logs", icon: AlignLeft },
       { id: "DELIVERY_REPORTS", title: "Delivery Reports", path: "/traffic/delivery-reports", icon: ClipboardList },
-      { id: "INBOUND_MO", title: "Inbound SMS", path: "/traffic/inbound-mo", icon: Inbox },
+      { id: "INBOUND_MO", title: "Inbound MO", path: "/traffic/inbound-mo", icon: Inbox },
       { id: "SENDER_IDS", title: "Sender IDs", path: "/traffic/sender-ids", icon: CreditCard },
-      { id: "USSD_SESSIONS", title: "USSD", path: "/traffic/ussd-sessions", icon: Smartphone },
+      { id: "USSD_SESSIONS", title: "USSD Sessions", path: "/traffic/ussd-sessions", icon: Smartphone },
       { id: "REPORTS_BILLING", title: "Reports & Billing", path: "/traffic/reports-billing", icon: BarChart3 },
     ],
   },

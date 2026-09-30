@@ -1,21 +1,16 @@
 import { useQuery } from "@tanstack/react-query"
 import { vasClient } from "../services/vas/vasClient"
-import type { InboundMessageItemViewModel } from "../services/vas/types"
+import type { ApiLogIndexViewModel, ApiLogQueryParams } from "../services/vas/types"
 import { env } from "../config/env"
 import { useAppSelector } from "../store"
 import { QUERY_CONFIG, stopPollingOnAuthError } from "../lib/queryClient"
 
-export interface UseInboundMoParams {
-  limit?: number
-  since?: string
-}
-
-export function useInboundMo(params: UseInboundMoParams = {}) {
+export function useApiLogs(params?: ApiLogQueryParams) {
   const signedIn = useAppSelector((state) => state.auth.signedIn)
 
-  return useQuery<InboundMessageItemViewModel[]>({
-    queryKey: ["vas", "inbound-mo", params],
-    queryFn: () => vasClient.getInboundMessages(params),
+  return useQuery<ApiLogIndexViewModel>({
+    queryKey: ["vas", "logs", "api", params],
+    queryFn: () => vasClient.getApiLogs(params),
     enabled: env.isLive && signedIn,
     staleTime: QUERY_CONFIG.traffic.staleTime,
     gcTime: QUERY_CONFIG.traffic.gcTime,

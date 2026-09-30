@@ -8,7 +8,7 @@ import type {
 import type { MessageTrafficLog } from "../../modules/traffic/TrafficLogsView"
 import { env } from "../config/env"
 import { useAppSelector } from "../store"
-import { stopPollingOnAuthError } from "../lib/queryClient"
+import { QUERY_CONFIG, stopPollingOnAuthError } from "../lib/queryClient"
 
 export interface UseMessagingTrafficParams {
   status?: string
@@ -63,8 +63,9 @@ export function useMessagingTraffic(params: UseMessagingTrafficParams = {}) {
       return []
     },
     enabled: env.isLive && signedIn,
-    staleTime: 5000,
-    refetchInterval: stopPollingOnAuthError(15000), // Stop polling immediately on 401/403
+    staleTime: QUERY_CONFIG.traffic.staleTime,
+    gcTime: QUERY_CONFIG.traffic.gcTime,
+    refetchInterval: stopPollingOnAuthError(QUERY_CONFIG.traffic.refetchInterval),
     retry: (failureCount, error: any) => {
       if (
         error?.status === 401 ||

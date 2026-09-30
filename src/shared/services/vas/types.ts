@@ -172,8 +172,13 @@ export interface TrafficQueryParams extends PaginationParams {
 }
 
 export interface DlrQueryParams extends PaginationParams {
+  pageSize?: number
   status?: string
   query?: string
+  messageId?: string
+  carrierId?: string
+  fromDate?: string
+  toDate?: string
 }
 
 export interface AuditQueryParams extends PaginationParams {
@@ -522,5 +527,335 @@ export interface WebhooksApiResponse {
   items?: WebhookItemViewModel[]
   data?: WebhookItemViewModel[]
 }
+
+// ==========================================
+// 12. DELIVERY REPORTS & BILLING (Tag 12)
+// ==========================================
+export interface DeliveryReportItemViewModel {
+  id: string
+  tenant?: string
+  tenantName?: string
+  carrier?: string
+  carrierName?: string
+  carrierMsgId?: string
+  messageId?: string
+  status: "Delivered" | "Failed" | "Expired" | "Rejected" | "Accepted" | "Unknown" | string
+  errorCode?: string
+  error?: string
+  latencyMs?: number
+  latency?: string
+  deliveredAt?: string
+  receivedAt?: string
+  received?: string
+  timeline?: {
+    stage: string
+    timestamp: string
+    status: "done" | "failed" | "pending"
+    detail?: string
+  }[]
+}
+
+export interface DeliveryReportsApiResponse {
+  items?: DeliveryReportItemViewModel[]
+  data?: DeliveryReportItemViewModel[]
+  totalCount?: number
+  page?: number
+  pageSize?: number
+}
+
+export interface ReportQueryParams {
+  fromDate?: string
+  toDate?: string
+  tenantId?: string
+  carrierId?: string
+  type?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface MessagingReportResponse {
+  totalMessages: number
+  delivered: number
+  failed: number
+  pending: number
+  successRate: number
+  segments: number
+  dailyBreakdown?: {
+    date: string
+    delivered: number
+    failed: number
+    total: number
+  }[]
+}
+
+export interface DeliveryReportAnalyticsResponse {
+  totalDlrReceived: number
+  avgLatencyMs: number
+  carrierBreakdown?: {
+    network: string
+    code: string
+    totalTraffic: number
+    delivered: number
+    failed: number
+    successRate: number
+    avgLatency: string
+  }[]
+}
+
+export interface FinancialReportResponse {
+  summary?: {
+    totalBilled: number
+    prepaidUsage: number
+    postpaidUsage: number
+    activeReserves: number
+    currentBalance: number
+  }
+  ledgerRecords?: {
+    id: string
+    dateTime: string
+    tenant: string
+    category: string
+    type: string
+    amount: string
+    balanceAfter: string
+    segmentsRate: string
+    reference: string
+    description: string
+  }[]
+}
+
+// ==========================================
+// 13. TENANTS (Tag 13)
+// ==========================================
+export interface TenantListItemViewModel {
+  id: string
+  name: string
+  slug?: string
+  status?: "Active" | "Suspended" | "Pending" | string
+  contactEmail?: string
+  contactName?: string
+  contactPhone?: string
+  countryCode?: string
+  createdAt?: string
+  userCount?: number
+  walletBalance?: number
+  availableBalance?: number
+  reservedBalance?: number
+  currency?: string
+  billingMode?: "Prepaid" | "Postpaid" | string
+}
+
+export interface TenantFormViewModel {
+  id?: string
+  name: string
+  slug?: string
+  status?: string
+  contactName?: string
+  contactEmail?: string
+  contactPhone?: string
+  countryCode?: string
+  timeZoneId?: string
+  notes?: string
+}
+
+// ==========================================
+// 14. USERS & ROLES (Tag 14)
+// ==========================================
+export interface UserListItemViewModel {
+  id: string
+  email: string
+  displayName?: string
+  firstName?: string
+  lastName?: string
+  tenantName?: string
+  tenantId?: string
+  isActive?: boolean
+  status?: "Active" | "Suspended" | string
+  roles?: string[]
+  createdAt?: string
+  lastLoginAt?: string
+}
+
+export interface UserFormViewModel {
+  id?: string
+  email: string
+  firstName?: string
+  lastName?: string
+  tenantId?: string
+  roles?: string[]
+  selectedRoles?: string[]
+  isActive?: boolean
+  password?: string
+}
+
+export interface RoleListItemViewModel {
+  id: string
+  name: string
+  description?: string
+  userCount?: number
+  permissionCount?: number
+  permissions?: string[]
+  isSystemRole?: boolean
+}
+
+export interface RoleFormViewModel {
+  id?: string
+  name: string
+  description?: string
+  permissions?: string[]
+}
+
+export interface UpdateRolePermissionsRequest {
+  permissions: string[]
+}
+
+// ==========================================
+// 15. LOGS & AUDIT TRAIL (Tag 15)
+// ==========================================
+export interface ApiLogListItemViewModel {
+  id: string
+  timestamp: string
+  method: string
+  path: string
+  queryString?: string
+  statusCode: number
+  durationMs?: number
+  clientIp?: string
+  apiKeyPrefix?: string
+  tenantId?: string
+  tenantName?: string
+  errorMessage?: string
+  hasRequestBody?: boolean
+  hasResponseBody?: boolean
+}
+
+export interface ApiLogIndexViewModel {
+  logs: ApiLogListItemViewModel[]
+  stats?: any
+  totalCount: number
+  page: number
+  pageSize: number
+  totalPages: number
+  hasPreviousPage?: boolean
+  hasNextPage?: boolean
+}
+
+export interface ApiLogQueryParams {
+  Search?: string
+  Method?: string
+  StatusFilter?: string
+  Path?: string
+  TenantId?: string
+  FromUtc?: string
+  ToUtc?: string
+  Page?: number
+  PageSize?: number
+}
+
+export interface AuditLogRecordDto {
+  id: string
+  tenantId?: string
+  tenant?: any
+  userId?: string
+  userEmail?: string
+  action: string
+  entityType: string
+  entityId?: string
+  summary: string
+  ipAddress?: string
+  userAgent?: string
+  correlationId?: string
+  createdAt: string
+}
+
+export interface AuditLogsResponse {
+  items: AuditLogRecordDto[]
+  totalCount: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export interface AuditLogQueryParams {
+  actionName?: string
+  entityType?: string
+  userEmail?: string
+  from?: string
+  to?: string
+  page?: number
+  pageSize?: number
+}
+
+// Backward-compat aliases
+export type ApiLogItemViewModel = ApiLogListItemViewModel
+export type AuditLogItemViewModel = AuditLogRecordDto
+
+// ==========================================
+// 16. SYSTEM SETTINGS & API KEYS (Tag 16)
+// ==========================================
+export interface SystemSettingItemViewModel {
+  id: string
+  key: string
+  value?: string
+  displayValue?: string
+  description?: string
+  isSecret?: boolean
+  updatedAt?: string
+}
+
+export interface SystemSettingFormViewModel {
+  id?: string
+  key: string
+  value: string
+  description?: string
+  isSecret?: boolean
+}
+
+export interface ApiKeyListItemViewModel {
+  id: string
+  name: string
+  keyPrefix?: string
+  scopes?: string[]
+  isSandbox?: boolean
+  isRevoked?: boolean
+  expiresAt?: string
+  lastUsedAt?: string
+  createdAt?: string
+}
+
+export interface ApiKeyFormViewModel {
+  name: string
+  tenantId?: string
+  isSandbox?: boolean
+  expiresAt?: string
+  notes?: string
+  selectedScopes?: string[]
+}
+
+export interface CreateApiKeyRequest {
+  name: string
+  tenantId?: string
+  isSandbox?: boolean
+  expiresAt?: string
+  notes?: string
+  selectedScopes?: string[]
+  scopes?: string[]
+  expiresInDays?: number
+}
+
+export interface CreateApiKeyResponse {
+  id: string
+  name: string
+  apiKey?: string
+  keyPrefix?: string
+  scopes?: string[]
+  expiresAt?: string
+}
+
+// Backward-compat alias
+export type ApiKeyItemViewModel = ApiKeyListItemViewModel
+
+
+
 
 

@@ -8,12 +8,16 @@ import {
   LogInspectDrawer,
   type ApiLogRecord,
 } from "./logs"
+import { useApiLogs } from "../../shared/hooks/useApiLogs"
+import { env } from "../../shared/config/env"
+import { useAppSelector } from "../../shared/store"
+import type { ApiLogQueryParams } from "../../shared/services/vas/types"
 
 // Re-export all types & helper utilities for backward compatibility
 export * from "./logs/types"
 
 export function DeveloperLogsView() {
-  const [logs] = React.useState<ApiLogRecord[]>(INITIAL_API_LOGS)
+  const signedIn = useAppSelector((state) => state.auth.signedIn)
 
   // Filters state
   const [selectedMethod, setSelectedMethod] = React.useState<string>("All Methods")
@@ -22,11 +26,47 @@ export function DeveloperLogsView() {
   const [selectedTenant, setSelectedTenant] = React.useState<string>("All Tenants")
   const [searchTerm, setSearchTerm] = React.useState<string>("")
 
+  // Prepare API Query Params
+  const queryParams = React.useMemo<ApiLogQueryParams>(() => {
+    return {
+      Method: selectedMethod !== "All Methods" ? selectedMethod : undefined,
+      Path: apiPath.trim() || undefined,
+      Search: searchTerm.trim() || undefined,
+    }
+  }, [selectedMethod, apiPath, searchTerm])
+
+  const { data: apiLogsData, isLoading, refetch } = useApiLogs(queryParams)
+
   // Refresh spinner state
   const [isRefreshing, setIsRefreshing] = React.useState(false)
 
   // Inspector Drawer state
   const [inspectedLog, setInspectedLog] = React.useState<ApiLogRecord | null>(null)
+
+  // Live mapped logs or fallback
+  const logs = React.useMemo<ApiLogRecord[]>(() => {
+    if (apiLogsData?.logs && Array.isArray(apiLogsData.logs) && apiLogsData.logs.length > 0) {
+      return apiLogsData.logs.map((l) => ({
+        id: l.id,
+        status: l.statusCode,
+        method: l.method,
+        path: l.path + (l.queryString ? `?${l.queryString}` : ""),
+        duration: l.durationMs ?? 0,
+        tenant: l.tenantName || "Platform",
+        apiKey: l.apiKeyPrefix ? `${l.apiKeyPrefix}...` : "sk_live_...",
+        clientIp: l.clientIp || "127.0.0.1",
+        timestamp: l.timestamp ? new Date(l.timestamp).toUTCString() : "",
+        userAgent: "HTTP Client / Gateway API",
+        requestBody: l.hasRequestBody ? "{ /* payload */ }" : "{}",
+        responseBody: l.hasResponseBody ? "{ /* response */ }" : "{}",
+        errorReason: l.errorMessage,
+      }))
+    }
+    if (!env.isLive || !signedIn) {
+      return INITIAL_API_LOGS
+    }
+    return INITIAL_API_LOGS
+  }, [apiLogsData, signedIn])
 
   // Filter logs reactively based on user selections
   const filteredLogs = React.useMemo(() => {
@@ -86,8 +126,15 @@ export function DeveloperLogsView() {
     })
   }, [logs, selectedMethod, selectedStatus, apiPath, selectedTenant, searchTerm])
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true)
+    if (env.isLive && signedIn) {
+      try {
+        await refetch()
+      } catch {
+        // fallback
+      }
+    }
     setTimeout(() => {
       setIsRefreshing(false)
     }, 400)
@@ -119,11 +166,18 @@ export function DeveloperLogsView() {
       />
 
       {/* 4. Logs Table Card */}
-      <LogsTable
-        logs={filteredLogs}
-        totalCount={logs.length}
-        onInspect={(log) => setInspectedLog(log)}
-      />
+      {Boolean(isLoading && env.isLive && (!(apiLogsData as any)?.logs || (apiLogsData as any)?.logs?.length === 0)) ? (
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-12 text-center">
+          <div className="inline-block animate-spin w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full mb-3" />
+          <p className="text-xs text-slate-500 font-medium">Streaming live API request logs...</p>
+        </div>
+      ) : (
+        <LogsTable
+          logs={filteredLogs}
+          totalCount={filteredLogs.length}
+          onInspect={(log) => setInspectedLog(log)}
+        />
+      )}
 
       {/* 5. Slide-Over Inspect Drawer */}
       <LogInspectDrawer

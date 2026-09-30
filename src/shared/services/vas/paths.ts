@@ -80,8 +80,9 @@ export const VAS_PATHS = {
     auditLogs: "/api/v1/logs/audit",
   },
   developers: {
-    keys: "/api/v1/settings",
-    revokeKey: (id: string) => `/api/v1/settings/${id}`,
+    keys: "/api/v1/api-keys",
+    revokeKey: (id: string) => `/api/v1/api-keys/${id}/revoke`,
+    deleteKey: (id: string) => `/api/v1/api-keys/${id}`,
     webhooks: "/api/v1/webhooks",
     webhook: (id: string) => `/api/v1/webhooks/${id}`,
     deleteWebhook: (id: string) => `/api/v1/webhooks/${id}`,

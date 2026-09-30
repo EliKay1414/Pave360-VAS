@@ -42,6 +42,30 @@ import type {
   CreateWebhookRequest,
   CreateWebhookResponse,
   WebhooksApiResponse,
+  DeliveryReportItemViewModel,
+  ReportQueryParams,
+  MessagingReportResponse,
+  DeliveryReportAnalyticsResponse,
+  FinancialReportResponse,
+  TenantListItemViewModel,
+  TenantFormViewModel,
+  UserListItemViewModel,
+  UserFormViewModel,
+  RoleListItemViewModel,
+  RoleFormViewModel,
+  UpdateRolePermissionsRequest,
+  ApiLogListItemViewModel,
+  ApiLogIndexViewModel,
+  ApiLogQueryParams,
+  AuditLogRecordDto,
+  AuditLogsResponse,
+  AuditLogQueryParams,
+  SystemSettingItemViewModel,
+  SystemSettingFormViewModel,
+  ApiKeyListItemViewModel,
+  ApiKeyFormViewModel,
+  CreateApiKeyRequest,
+  CreateApiKeyResponse,
 } from "./types"
 
 export class VasClient extends Pave360Client {
@@ -382,9 +406,21 @@ export class VasClient extends Pave360Client {
     return this.vasRequest<BatchUploadJobResponse>(VAS_PATHS.messaging.uploadStatus(jobId))
   }
 
-  getDeliveryReports(params?: DlrQueryParams) {
-    const qs = params ? new URLSearchParams(params as Record<string, string>).toString() : ""
-    return this.vasRequest<VasApiResponse<unknown[]>>(`${VAS_PATHS.traffic.dlr}${qs ? `?${qs}` : ""}`)
+  getDeliveryReports(params?: DlrQueryParams): Promise<DeliveryReportItemViewModel[]> {
+    const qs = params
+      ? new URLSearchParams(
+          Object.entries(params)
+            .filter(([_, v]) => v !== undefined && v !== null && v !== "")
+            .reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {})
+        ).toString()
+      : ""
+    return this.vasRequest<any>(`${VAS_PATHS.traffic.dlr}${qs ? `?${qs}` : ""}`).then((res) => {
+      if (Array.isArray(res)) return res
+      if (Array.isArray(res?.items)) return res.items
+      if (Array.isArray(res?.reports)) return res.reports
+      if (Array.isArray(res?.data)) return res.data
+      return []
+    })
   }
 
 
@@ -461,58 +497,200 @@ export class VasClient extends Pave360Client {
     })
   }
 
-  // --- 5. Administration ---
-  getTenants() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.admin.tenants)
+  // --- 5. Administration (Tag 13 & Tag 14) ---
+  async getTenants(): Promise<TenantListItemViewModel[]> {
+    const res = await this.vasRequest<any>(VAS_PATHS.admin.tenants)
+    if (Array.isArray(res)) return res
+    if (Array.isArray(res?.items)) return res.items
+    if (Array.isArray(res?.data)) return res.data
+    return []
   }
 
-  saveTenant(payload: unknown) {
-    return this.vasRequest<VasApiResponse<unknown>>(VAS_PATHS.admin.tenants, {
+  getTenant(id: string): Promise<TenantFormViewModel> {
+    return this.vasRequest<TenantFormViewModel>(VAS_PATHS.admin.tenant(id))
+  }
+
+  createTenant(payload: TenantFormViewModel): Promise<TenantListItemViewModel> {
+    return this.vasRequest<TenantListItemViewModel>(VAS_PATHS.admin.tenants, {
       method: "POST",
       body: JSON.stringify(payload),
     })
   }
 
-  getUsers() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.admin.users)
+  updateTenant(id: string, payload: TenantFormViewModel): Promise<TenantListItemViewModel> {
+    return this.vasRequest<TenantListItemViewModel>(VAS_PATHS.admin.tenant(id), {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    })
   }
 
-  saveUser(payload: unknown) {
-    return this.vasRequest<VasApiResponse<unknown>>(VAS_PATHS.admin.users, {
+  deleteTenant(id: string): Promise<void> {
+    return this.vasRequest<void>(VAS_PATHS.admin.tenant(id), {
+      method: "DELETE",
+    })
+  }
+
+  async getUsers(): Promise<UserListItemViewModel[]> {
+    const res = await this.vasRequest<any>(VAS_PATHS.admin.users)
+    if (Array.isArray(res)) return res
+    if (Array.isArray(res?.items)) return res.items
+    if (Array.isArray(res?.data)) return res.data
+    return []
+  }
+
+  getUser(id: string): Promise<UserFormViewModel> {
+    return this.vasRequest<UserFormViewModel>(VAS_PATHS.admin.user(id))
+  }
+
+  createUser(payload: UserFormViewModel): Promise<UserListItemViewModel> {
+    return this.vasRequest<UserListItemViewModel>(VAS_PATHS.admin.users, {
       method: "POST",
       body: JSON.stringify(payload),
     })
   }
 
-  getRoles() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.admin.roles)
+  updateUser(id: string, payload: UserFormViewModel): Promise<UserListItemViewModel> {
+    return this.vasRequest<UserListItemViewModel>(VAS_PATHS.admin.user(id), {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    })
   }
 
-  updateRolePermissions(roleId: string, permissions: string[]) {
-    return this.vasRequest<VasApiResponse<unknown>>(VAS_PATHS.admin.rolePermissions(roleId), {
+  deleteUser(id: string): Promise<void> {
+    return this.vasRequest<void>(VAS_PATHS.admin.user(id), {
+      method: "DELETE",
+    })
+  }
+
+  toggleUserStatus(id: string): Promise<void> {
+    return this.vasRequest<void>(VAS_PATHS.admin.toggleUserStatus(id), {
+      method: "POST",
+    })
+  }
+
+  async getRoles(): Promise<RoleListItemViewModel[]> {
+    const res = await this.vasRequest<any>(VAS_PATHS.admin.roles)
+    if (Array.isArray(res)) return res
+    if (Array.isArray(res?.items)) return res.items
+    if (Array.isArray(res?.data)) return res.data
+    return []
+  }
+
+  getRole(id: string): Promise<RoleListItemViewModel> {
+    return this.vasRequest<RoleListItemViewModel>(VAS_PATHS.admin.role(id))
+  }
+
+  createRole(payload: RoleFormViewModel): Promise<RoleListItemViewModel> {
+    return this.vasRequest<RoleListItemViewModel>(VAS_PATHS.admin.roles, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+  }
+
+  updateRolePermissions(roleId: string, permissions: string[]): Promise<void> {
+    return this.vasRequest<void>(VAS_PATHS.admin.rolePermissions(roleId), {
       method: "PUT",
       body: JSON.stringify({ permissions }),
     })
   }
 
-  getAuditLogs(params?: AuditQueryParams) {
-    const qs = params ? new URLSearchParams(params as Record<string, string>).toString() : ""
-    return this.vasRequest<VasApiResponse<unknown[]>>(`${VAS_PATHS.admin.auditLogs}${qs ? `?${qs}` : ""}`)
+  // --- Tag 15: Logs & Audit Trail ---
+  async getApiLogs(params?: ApiLogQueryParams): Promise<ApiLogIndexViewModel> {
+    const qs = params
+      ? new URLSearchParams(
+          Object.entries(params)
+            .filter(([_, v]) => v !== undefined && v !== null && v !== "")
+            .reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {})
+        ).toString()
+      : ""
+    const res = await this.vasRequest<any>(`${VAS_PATHS.developers.logs}${qs ? `?${qs}` : ""}`)
+    if (res && Array.isArray(res.logs)) return res as ApiLogIndexViewModel
+    if (Array.isArray(res)) {
+      return {
+        logs: res,
+        totalCount: res.length,
+        page: 1,
+        pageSize: res.length,
+        totalPages: 1,
+      }
+    }
+    return {
+      logs: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 50,
+      totalPages: 1,
+    }
   }
 
-  // --- 6. Developers & Platform Settings ---
-  getApiKeys() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.developers.keys)
+  async getAuditLogs(params?: AuditLogQueryParams): Promise<AuditLogsResponse> {
+    const qs = params
+      ? new URLSearchParams(
+          Object.entries(params)
+            .filter(([_, v]) => v !== undefined && v !== null && v !== "")
+            .reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {})
+        ).toString()
+      : ""
+    const res = await this.vasRequest<any>(`${VAS_PATHS.admin.auditLogs}${qs ? `?${qs}` : ""}`)
+    if (res && Array.isArray(res.items)) return res as AuditLogsResponse
+    if (Array.isArray(res)) {
+      return {
+        items: res,
+        totalCount: res.length,
+        page: 1,
+        pageSize: res.length,
+        totalPages: 1,
+      }
+    }
+    return {
+      items: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 50,
+      totalPages: 1,
+    }
+  }
+
+  // --- Tag 16: API Keys ---
+  async getApiKeys(): Promise<ApiKeyListItemViewModel[]> {
+    const res = await this.vasRequest<any>(VAS_PATHS.developers.keys)
+    if (Array.isArray(res)) return res
+    if (Array.isArray(res?.items)) return res.items
+    if (Array.isArray(res?.keys)) return res.keys
+    if (Array.isArray(res?.data)) return res.data
+    return []
+  }
+
+  override createApiKey(payload: string | CreateApiKeyRequest): Promise<any> {
+    const body = typeof payload === "string" ? { name: payload } : payload
+    return this.vasRequest<CreateApiKeyResponse>(VAS_PATHS.developers.keys, {
+      method: "POST",
+      body: JSON.stringify(body),
+    })
+  }
+
+  createVasApiKey(payload: CreateApiKeyRequest): Promise<CreateApiKeyResponse> {
+    return this.vasRequest<CreateApiKeyResponse>(VAS_PATHS.developers.keys, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
   }
 
   override revokeApiKey(id: string): Promise<void> {
     return this.vasRequest<void>(VAS_PATHS.developers.revokeKey(id), {
-      method: "DELETE",
+      method: "POST",
+    }).catch(async (err: any) => {
+      if (err?.status === 405 || err?.statusCode === 405) {
+        return this.vasRequest<void>(VAS_PATHS.developers.revokeKey(id), {
+          method: "DELETE",
+        })
+      }
+      throw err
     })
   }
 
-  revokeVasApiKey(id: string) {
-    return this.vasRequest<VasApiResponse<unknown>>(VAS_PATHS.developers.revokeKey(id), {
+  deleteApiKey(id: string): Promise<void> {
+    return this.vasRequest<void>(VAS_PATHS.developers.deleteKey(id), {
       method: "DELETE",
     })
   }
@@ -574,19 +752,69 @@ export class VasClient extends Pave360Client {
     })
   }
 
-  getSystemSettings() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.settings.system)
+  // --- Tag 16: System Settings ---
+  async getSystemSettings(): Promise<SystemSettingItemViewModel[]> {
+    const res = await this.vasRequest<any>(VAS_PATHS.settings.system)
+    if (Array.isArray(res)) return res
+    if (Array.isArray(res?.items)) return res.items
+    if (Array.isArray(res?.data)) return res.data
+    return []
   }
 
-  saveSystemSetting(payload: unknown) {
-    return this.vasRequest<VasApiResponse<unknown>>(VAS_PATHS.settings.system, {
+  getSystemSetting(id: string): Promise<SystemSettingItemViewModel> {
+    return this.vasRequest<SystemSettingItemViewModel>(VAS_PATHS.settings.systemSetting(id))
+  }
+
+  createSystemSetting(payload: SystemSettingFormViewModel): Promise<SystemSettingItemViewModel> {
+    return this.vasRequest<SystemSettingItemViewModel>(VAS_PATHS.settings.system, {
       method: "POST",
       body: JSON.stringify(payload),
     })
   }
 
-  getBillingReports() {
-    return this.vasRequest<VasApiResponse<unknown[]>>(VAS_PATHS.reports.billing)
+  updateSystemSetting(id: string, payload: SystemSettingFormViewModel): Promise<SystemSettingItemViewModel> {
+    return this.vasRequest<SystemSettingItemViewModel>(VAS_PATHS.settings.systemSetting(id), {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    })
+  }
+
+  // --- Tag 12: Delivery Reports & Billing Endpoints ---
+  getFinancialReports(params?: ReportQueryParams): Promise<FinancialReportResponse> {
+    const qs = params
+      ? new URLSearchParams(
+          Object.entries(params)
+            .filter(([_, v]) => v !== undefined && v !== null && v !== "")
+            .reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {})
+        ).toString()
+      : ""
+    return this.vasRequest<FinancialReportResponse>(`${VAS_PATHS.reports.financial}${qs ? `?${qs}` : ""}`)
+  }
+
+  getMessagingReports(params?: ReportQueryParams): Promise<MessagingReportResponse> {
+    const qs = params
+      ? new URLSearchParams(
+          Object.entries(params)
+            .filter(([_, v]) => v !== undefined && v !== null && v !== "")
+            .reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {})
+        ).toString()
+      : ""
+    return this.vasRequest<MessagingReportResponse>(`${VAS_PATHS.reports.messaging}${qs ? `?${qs}` : ""}`)
+  }
+
+  getDeliveryReportsAnalytics(params?: ReportQueryParams): Promise<DeliveryReportAnalyticsResponse> {
+    const qs = params
+      ? new URLSearchParams(
+          Object.entries(params)
+            .filter(([_, v]) => v !== undefined && v !== null && v !== "")
+            .reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {})
+        ).toString()
+      : ""
+    return this.vasRequest<DeliveryReportAnalyticsResponse>(`${VAS_PATHS.reports.delivery}${qs ? `?${qs}` : ""}`)
+  }
+
+  getBillingReports(params?: ReportQueryParams) {
+    return this.getFinancialReports(params)
   }
 }
 

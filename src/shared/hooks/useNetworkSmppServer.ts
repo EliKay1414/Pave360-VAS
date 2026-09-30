@@ -3,7 +3,7 @@ import { vasClient } from "../services/vas/vasClient"
 import type { SmppServerStatusResponse } from "../services/vas/types"
 import { env } from "../config/env"
 import { useAppSelector } from "../store"
-import { stopPollingOnAuthError } from "../lib/queryClient"
+import { QUERY_CONFIG, stopPollingOnAuthError } from "../lib/queryClient"
 
 export function useSmppServerStatus() {
   const signedIn = useAppSelector((state) => state.auth.signedIn)
@@ -12,19 +12,9 @@ export function useSmppServerStatus() {
     queryKey: ["vas", "smpp-server"],
     queryFn: () => vasClient.getSmppStatus(),
     enabled: env.isLive && signedIn,
-    staleTime: 10_000,
-    refetchInterval: stopPollingOnAuthError(15_000),
-    retry: (failureCount, error: any) => {
-      if (
-        error?.status === 401 ||
-        error?.status === 403 ||
-        error?.statusCode === 401 ||
-        error?.statusCode === 403
-      ) {
-        return false
-      }
-      return failureCount < 1
-    },
+    staleTime: QUERY_CONFIG.realtime.staleTime,
+    gcTime: QUERY_CONFIG.realtime.gcTime,
+    refetchInterval: stopPollingOnAuthError(QUERY_CONFIG.realtime.refetchInterval),
   })
 }
 

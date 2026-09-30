@@ -7,7 +7,11 @@ import {
   ReportsFilterBar,
   FinancialLedgerTable,
   CarrierTelemetryView,
+  type LedgerRecord,
+  type CarrierTelemetryRecord,
 } from "./reports"
+import { useBillingReports } from "../../shared/hooks/useBillingReports"
+import { env } from "../../shared/config/env"
 
 // Re-export types for backward compatibility
 export * from "./reports/types"
@@ -20,6 +24,14 @@ export function ReportsBillingView() {
   const [toDate, setToDate] = React.useState("09/25/2026 03:52 PM")
   const [selectedTenant, setSelectedTenant] = React.useState("All Tenants")
   const [selectedType, setSelectedType] = React.useState<string>("All Types")
+
+  // Live billing and telemetry reports from VAS Backend
+  const { financial, telemetry, messaging, isLoading } = useBillingReports({
+    fromDate,
+    toDate,
+    tenantId: selectedTenant !== "All Tenants" ? selectedTenant : undefined,
+    type: selectedType !== "All Types" ? selectedType : undefined,
+  })
 
   // Dynamically update page header title & subtitle based on active tab
   React.useEffect(() => {
@@ -49,9 +61,24 @@ export function ReportsBillingView() {
     }
   }, [activeTab])
 
+  // Map live API records with fallback to mock data
+  const baseLedgerRecords: LedgerRecord[] = React.useMemo(() => {
+    if (env.isLive && financial?.ledgerRecords && financial.ledgerRecords.length > 0) {
+      return financial.ledgerRecords
+    }
+    return INITIAL_LEDGER_RECORDS
+  }, [financial])
+
+  const baseTelemetryRecords: CarrierTelemetryRecord[] = React.useMemo(() => {
+    if (env.isLive && telemetry?.carrierBreakdown && telemetry.carrierBreakdown.length > 0) {
+      return telemetry.carrierBreakdown
+    }
+    return CARRIER_TELEMETRY_DATA
+  }, [telemetry])
+
   // Real-time filtering reacting immediately to selectedType and selectedTenant
   const filteredRecords = React.useMemo(() => {
-    return INITIAL_LEDGER_RECORDS.filter((r) => {
+    return baseLedgerRecords.filter((r) => {
       // Filter by Tenant
       if (selectedTenant !== "All Tenants" && r.tenant !== selectedTenant) {
         return false
@@ -73,11 +100,11 @@ export function ReportsBillingView() {
 
       return true
     })
-  }, [selectedTenant, selectedType])
+  }, [baseLedgerRecords, selectedTenant, selectedType])
 
   // Filter button
   const handleApplyFilter = () => {
-    // Already reactive via state
+    // Already reactive via hook and state
   }
 
   // Reset button
@@ -139,7 +166,7 @@ export function ReportsBillingView() {
       {activeTab === "financial" && (
         <div className="space-y-6 animate-in fade-in-50 duration-150">
           {/* Financial KPI Cards */}
-          <FinancialMetricsCards />
+          <FinancialMetricsCards summary={financial?.summary} />
 
           {/* Filter Bar with DateTimePickers and Transaction Type dropdown */}
           <ReportsFilterBar
@@ -158,14 +185,14 @@ export function ReportsBillingView() {
           {/* Financial Ledger Table */}
           <FinancialLedgerTable
             records={filteredRecords}
-            totalCount={INITIAL_LEDGER_RECORDS.length}
+            totalCount={baseLedgerRecords.length}
           />
         </div>
       )}
 
       {/* 3. Tab 2: Traffic & Carrier Telemetry */}
       {activeTab === "telemetry" && (
-        <CarrierTelemetryView data={CARRIER_TELEMETRY_DATA} />
+        <CarrierTelemetryView data={baseTelemetryRecords} />
       )}
     </div>
   )

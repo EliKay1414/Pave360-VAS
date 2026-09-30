@@ -60,7 +60,7 @@ export function mapDashboardViewModelToMetrics(
   }
 }
 
-import { stopPollingOnAuthError } from "../lib/queryClient"
+import { QUERY_CONFIG, stopPollingOnAuthError } from "../lib/queryClient"
 
 export function useDashboardAnalytics() {
   const fallbackTelemetry = useVasTelemetry()
@@ -70,8 +70,9 @@ export function useDashboardAnalytics() {
     queryKey: ["vas", "dashboard", "analytics"],
     queryFn: () => vasClient.getDashboard(),
     enabled: env.isLive && signedIn,
-    refetchInterval: stopPollingOnAuthError(10000), // Stop polling if 401/403
-    staleTime: 5000,
+    staleTime: QUERY_CONFIG.realtime.staleTime,
+    gcTime: QUERY_CONFIG.realtime.gcTime,
+    refetchInterval: stopPollingOnAuthError(QUERY_CONFIG.realtime.refetchInterval),
     retry: (failureCount, error: any) => {
       if (
         error?.status === 401 ||

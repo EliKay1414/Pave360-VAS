@@ -10,6 +10,9 @@ import {
 } from "./api-keys"
 
 import { recordVasActivity } from "../../shared/lib/vasActivityStore"
+import { useApiKeys, useCreateApiKey, useRevokeApiKey } from "../../shared/hooks/useApiKeys"
+import { env } from "../../shared/config/env"
+import { useAppSelector } from "../../shared/store"
 
 // Re-export types for backward compatibility
 export * from "./api-keys/types"
@@ -17,8 +20,16 @@ export * from "./api-keys/types"
 const STORAGE_KEY = "pave360_vas_api_keys"
 
 export function ApiKeysView() {
+  const signedIn = useAppSelector((state) => state.auth.signedIn)
+  const { data: apiKeysData, isLoading } = useApiKeys()
+  const createApiKeyMutation = useCreateApiKey()
+  const revokeApiKeyMutation = useRevokeApiKey()
+
   // Load keys from localStorage or fallback to INITIAL_API_KEYS
-  const [apiKeys, setApiKeys] = React.useState<ApiKeyRecord[]>(() => {
+  const [localKeys, setLocalKeys] = React.useState<ApiKeyRecord[]>(() => {
+    if (env.isLive && signedIn) {
+      return []
+    }
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
@@ -40,8 +51,8 @@ export function ApiKeysView() {
   } | null>(null)
 
   // Save to localStorage whenever keys change
-  const saveKeys = (keys: ApiKeyRecord[]) => {
-    setApiKeys(keys)
+  const saveLocalKeys = (keys: ApiKeyRecord[]) => {
+    setLocalKeys(keys)
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(keys))
     } catch {
@@ -49,13 +60,52 @@ export function ApiKeysView() {
     }
   }
 
+  const apiKeys = React.useMemo<ApiKeyRecord[]>(() => {
+    if (apiKeysData && Array.isArray(apiKeysData) && apiKeysData.length > 0) {
+      return apiKeysData.map((k) => ({
+        id: k.id,
+        name: k.name,
+        prefix: k.keyPrefix || "sk_live_...",
+        scopes: k.scopes || ["messages.read", "messages.send"],
+        mode: k.isSandbox ? "Sandbox" : "Live",
+        status: k.isRevoked ? "Revoked" : "Active",
+        lastUsed: k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleString() : "Never",
+        tenant: "Platform",
+        expiresAt: k.expiresAt,
+        createdAt: k.createdAt ? new Date(k.createdAt).toLocaleDateString() : "",
+      }))
+    }
+    if (!env.isLive || !signedIn) {
+      return localKeys
+    }
+    return localKeys.length > 0 ? localKeys : INITIAL_API_KEYS
+  }, [apiKeysData, localKeys, signedIn])
+
   // Handle Create API Key
-  const handleCreateKey = (newKey: ApiKeyRecord, secretKey: string) => {
+  const handleCreateKey = async (newKey: ApiKeyRecord, secretKey: string) => {
+    let finalSecret = secretKey
+    if (env.isLive && signedIn) {
+      try {
+        const res = await createApiKeyMutation.mutateAsync({
+          name: newKey.name,
+          scopes: newKey.scopes,
+          isSandbox: newKey.mode === "Sandbox",
+          expiresAt: newKey.expiresAt,
+          notes: newKey.notes,
+        })
+        if (res?.apiKey) {
+          finalSecret = res.apiKey
+        }
+      } catch {
+        // fallback to client-generated secret
+      }
+    }
+
     const updated = [newKey, ...apiKeys]
-    saveKeys(updated)
+    saveLocalKeys(updated)
     setIsCreateOpen(false)
     setRevealedSecret({
-      secret: secretKey,
+      secret: finalSecret,
       name: newKey.name,
     })
     recordVasActivity({
@@ -66,12 +116,20 @@ export function ApiKeysView() {
   }
 
   // Handle Revoke API Key confirmation
-  const handleRevokeConfirm = (keyId: string) => {
+  const handleRevokeConfirm = async (keyId: string) => {
+    if (env.isLive && signedIn) {
+      try {
+        await revokeApiKeyMutation.mutateAsync(keyId)
+      } catch {
+        // fallback
+      }
+    }
+
     const targetKey = apiKeys.find((k) => k.id === keyId)
     const updated = apiKeys.map((k) =>
       k.id === keyId ? { ...k, status: "Revoked" as const } : k
     )
-    saveKeys(updated)
+    saveLocalKeys(updated)
     recordVasActivity({
       action: "apikey.revoke",
       entity: "API Key",
@@ -86,10 +144,17 @@ export function ApiKeysView() {
       <ApiKeysHeader onCreateClick={() => setIsCreateOpen(true)} />
 
       {/* 2. API Keys Presentation Table */}
-      <ApiKeysTable
-        apiKeys={apiKeys}
-        onRevokeClick={(key) => setKeyToRevoke(key)}
-      />
+      {Boolean(isLoading && env.isLive && (!apiKeysData || (apiKeysData as any[])?.length === 0)) ? (
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-12 text-center">
+          <div className="inline-block animate-spin w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full mb-3" />
+          <p className="text-xs text-slate-500 font-medium">Retrieving active API authentication tokens...</p>
+        </div>
+      ) : (
+        <ApiKeysTable
+          apiKeys={apiKeys}
+          onRevokeClick={(key) => setKeyToRevoke(key)}
+        />
+      )}
 
       {/* 3. Create API Key Modal */}
       <CreateApiKeyModal

@@ -1,16 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { vasClient } from "../services/vas/vasClient"
-import type { CarrierListItemViewModel, CarrierFormViewModel } from "../services/vas/types"
+import type { TenantListItemViewModel, TenantFormViewModel } from "../services/vas/types"
 import { env } from "../config/env"
 import { useAppSelector } from "../store"
 import { QUERY_CONFIG, stopPollingOnAuthError } from "../lib/queryClient"
 
-export function useCarriers() {
+export function useTenants() {
   const signedIn = useAppSelector((state) => state.auth.signedIn)
 
-  return useQuery<CarrierListItemViewModel[]>({
-    queryKey: ["vas", "carriers"],
-    queryFn: () => vasClient.getCarriers(),
+  return useQuery<TenantListItemViewModel[]>({
+    queryKey: ["vas", "tenants"],
+    queryFn: () => vasClient.getTenants(),
     enabled: env.isLive && signedIn,
     staleTime: QUERY_CONFIG.standard.staleTime,
     gcTime: QUERY_CONFIG.standard.gcTime,
@@ -18,48 +18,48 @@ export function useCarriers() {
   })
 }
 
-export function useCarrierDetail(id?: string) {
+export function useTenantDetail(id?: string) {
   const signedIn = useAppSelector((state) => state.auth.signedIn)
 
-  return useQuery<CarrierFormViewModel>({
-    queryKey: ["vas", "carrier", id],
-    queryFn: () => vasClient.getCarrier(id!),
+  return useQuery<TenantFormViewModel>({
+    queryKey: ["vas", "tenant", id],
+    queryFn: () => vasClient.getTenant(id!),
     enabled: Boolean(id && env.isLive && signedIn),
     staleTime: QUERY_CONFIG.standard.staleTime,
     gcTime: QUERY_CONFIG.standard.gcTime,
   })
 }
 
-export function useCreateCarrier() {
+export function useCreateTenant() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: CarrierFormViewModel) => vasClient.createCarrier(payload),
+    mutationFn: (payload: TenantFormViewModel) => vasClient.createTenant(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vas", "carriers"] })
+      queryClient.invalidateQueries({ queryKey: ["vas", "tenants"] })
       queryClient.invalidateQueries({ queryKey: ["vas", "dashboard"] })
     },
   })
 }
 
-export function useUpdateCarrier() {
+export function useUpdateTenant() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: CarrierFormViewModel }) =>
-      vasClient.updateCarrier(id, payload),
+    mutationFn: ({ id, payload }: { id: string; payload: TenantFormViewModel }) =>
+      vasClient.updateTenant(id, payload),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["vas", "carriers"] })
-      queryClient.invalidateQueries({ queryKey: ["vas", "carrier", variables.id] })
+      queryClient.invalidateQueries({ queryKey: ["vas", "tenants"] })
+      queryClient.invalidateQueries({ queryKey: ["vas", "tenant", variables.id] })
       queryClient.invalidateQueries({ queryKey: ["vas", "dashboard"] })
     },
   })
 }
 
-export function useDeleteCarrier() {
+export function useDeleteTenant() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => vasClient.deleteCarrier(id),
+    mutationFn: (id: string) => vasClient.deleteTenant(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vas", "carriers"] })
+      queryClient.invalidateQueries({ queryKey: ["vas", "tenants"] })
       queryClient.invalidateQueries({ queryKey: ["vas", "dashboard"] })
     },
   })

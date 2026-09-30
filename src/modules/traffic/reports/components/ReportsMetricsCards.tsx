@@ -1,4 +1,20 @@
-export function FinancialMetricsCards() {
+interface FinancialMetricsCardsProps {
+  summary?: {
+    totalBilled?: number
+    prepaidUsage?: number
+    postpaidUsage?: number
+    activeReserves?: number
+    currentBalance?: number
+  }
+}
+
+export function FinancialMetricsCards({ summary }: FinancialMetricsCardsProps = {}) {
+  const totalBilled = summary?.totalBilled !== undefined ? summary.totalBilled.toFixed(2) : "0.68"
+  const prepaidUsage = summary?.prepaidUsage !== undefined ? summary.prepaidUsage.toFixed(2) : "0.68"
+  const postpaidUsage = summary?.postpaidUsage !== undefined ? summary.postpaidUsage.toFixed(2) : "0.00"
+  const activeReserves = summary?.activeReserves !== undefined ? summary.activeReserves.toFixed(2) : "0.92"
+  const currentBalance = summary?.currentBalance !== undefined ? summary.currentBalance.toFixed(2) : "0.00"
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
       {/* Card 1: Total Revenue Billed */}
@@ -8,7 +24,7 @@ export function FinancialMetricsCards() {
         </span>
         <div className="my-2 flex items-baseline">
           <span className="text-2xl sm:text-[26px] font-bold text-slate-900 tracking-tight">
-            0.68
+            {totalBilled}
           </span>
           <span className="text-xs font-semibold text-slate-500 ml-1.5">
             GHS
@@ -26,7 +42,7 @@ export function FinancialMetricsCards() {
         </span>
         <div className="my-2 flex items-baseline">
           <span className="text-2xl sm:text-[26px] font-bold text-[#059669] tracking-tight">
-            0.68
+            {prepaidUsage}
           </span>
           <span className="text-xs font-semibold text-slate-500 ml-1.5">
             GHS
@@ -44,7 +60,7 @@ export function FinancialMetricsCards() {
         </span>
         <div className="my-2 flex items-baseline">
           <span className="text-2xl sm:text-[26px] font-bold text-[#0070f3] tracking-tight">
-            0.00
+            {postpaidUsage}
           </span>
           <span className="text-xs font-semibold text-slate-500 ml-1.5">
             GHS
@@ -62,7 +78,7 @@ export function FinancialMetricsCards() {
         </span>
         <div className="my-2 flex items-baseline">
           <span className="text-2xl sm:text-[26px] font-bold text-[#d97706] tracking-tight">
-            0.92
+            {activeReserves}
           </span>
           <span className="text-xs font-semibold text-slate-500 ml-1.5">
             GHS
@@ -80,7 +96,7 @@ export function FinancialMetricsCards() {
         </span>
         <div className="my-2 flex items-baseline">
           <span className="text-2xl sm:text-[26px] font-bold text-[#6366f1] tracking-tight">
-            0.00
+            {currentBalance}
           </span>
           <span className="text-xs font-semibold text-slate-500 ml-1.5">
             GHS

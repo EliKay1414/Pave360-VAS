@@ -7,7 +7,7 @@ import type {
 } from "../services/vas/types"
 import { env } from "../config/env"
 import { useAppSelector } from "../store"
-import { stopPollingOnAuthError } from "../lib/queryClient"
+import { QUERY_CONFIG, stopPollingOnAuthError } from "../lib/queryClient"
 
 export function useSenderIds() {
   const signedIn = useAppSelector((state) => state.auth.signedIn)
@@ -16,19 +16,9 @@ export function useSenderIds() {
     queryKey: ["vas", "sender-ids"],
     queryFn: () => vasClient.getSenderIds(),
     enabled: env.isLive && signedIn,
-    staleTime: 15_000,
-    refetchInterval: stopPollingOnAuthError(30_000),
-    retry: (failureCount, error: any) => {
-      if (
-        error?.status === 401 ||
-        error?.status === 403 ||
-        error?.statusCode === 401 ||
-        error?.statusCode === 403
-      ) {
-        return false
-      }
-      return failureCount < 1
-    },
+    staleTime: QUERY_CONFIG.standard.staleTime,
+    gcTime: QUERY_CONFIG.standard.gcTime,
+    refetchInterval: stopPollingOnAuthError(QUERY_CONFIG.standard.refetchInterval),
   })
 }
 
