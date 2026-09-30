@@ -1,4 +1,4 @@
-﻿import { env } from "../../config/env"
+import { env } from "../../config/env"
 import { Pave360Client, Pave360ApiError } from "../core/pave360Client"
 import { VAS_PATHS } from "./paths"
 import type {
@@ -190,7 +190,12 @@ export class VasClient extends Pave360Client {
 
   // --- 1. Dashboard Analytics ---
   getDashboard(): Promise<DashboardViewModel> {
-    return this.vasRequest<DashboardViewModel>(VAS_PATHS.dashboard.overview)
+    return this.vasRequest<DashboardViewModel>(VAS_PATHS.dashboard.overview).catch((err: any) => {
+      if (err?.status === 404 || err?.statusCode === 404) {
+        return {} as DashboardViewModel
+      }
+      throw err
+    })
   }
 
   getDashboardMetrics(): Promise<DashboardViewModel> {
@@ -199,7 +204,12 @@ export class VasClient extends Pave360Client {
 
   // --- 5. Carriers & Connections ---
   getCarriers(): Promise<CarrierListItemViewModel[]> {
-    return this.vasRequest<CarrierListItemViewModel[]>(VAS_PATHS.network.carriers)
+    return this.vasRequest<CarrierListItemViewModel[]>(VAS_PATHS.network.carriers).catch((err: any) => {
+      if (err?.status === 404 || err?.statusCode === 404) {
+        return []
+      }
+      throw err
+    })
   }
 
   getCarrier(id: string): Promise<CarrierFormViewModel> {
@@ -230,7 +240,12 @@ export class VasClient extends Pave360Client {
     const url = carrierId
       ? `${VAS_PATHS.network.connections}?carrierId=${encodeURIComponent(carrierId)}`
       : VAS_PATHS.network.connections
-    return this.vasRequest<ConnectionListItemViewModel[]>(url)
+    return this.vasRequest<ConnectionListItemViewModel[]>(url).catch((err: any) => {
+      if (err?.status === 404 || err?.statusCode === 404) {
+        return []
+      }
+      throw err
+    })
   }
 
   getConnection(id: string): Promise<ConnectionFormViewModel> {
@@ -278,7 +293,12 @@ export class VasClient extends Pave360Client {
 
   // --- 6. Routing Engine ---
   getRoutes(): Promise<RouteListItemViewModel[]> {
-    return this.vasRequest<RouteListItemViewModel[]>(VAS_PATHS.network.routes)
+    return this.vasRequest<RouteListItemViewModel[]>(VAS_PATHS.network.routes).catch((err: any) => {
+      if (err?.status === 404 || err?.statusCode === 404) {
+        return []
+      }
+      throw err
+    })
   }
 
   getRoute(id: string): Promise<RouteFormViewModel> {
@@ -320,7 +340,12 @@ export class VasClient extends Pave360Client {
 
   // --- 17. SMPP Server ---
   getSmppStatus(): Promise<SmppServerStatusResponse> {
-    return this.vasRequest<SmppServerStatusResponse>(VAS_PATHS.network.smppStatus)
+    return this.vasRequest<SmppServerStatusResponse>(VAS_PATHS.network.smppStatus).catch((err: any) => {
+      if (err?.status === 404 || err?.statusCode === 404) {
+        return { isRunning: false, listeningPort: 2775, activeSessions: [] }
+      }
+      throw err
+    })
   }
 
   disconnectSmppSession(sessionId: string): Promise<void> {
@@ -331,7 +356,12 @@ export class VasClient extends Pave360Client {
 
   // --- 10. Queues & Telemetry ---
   getQueues(): Promise<QueueDashboardViewModel> {
-    return this.vasRequest<QueueDashboardViewModel>(VAS_PATHS.network.queues)
+    return this.vasRequest<QueueDashboardViewModel>(VAS_PATHS.network.queues).catch((err: any) => {
+      if (err?.status === 404 || err?.statusCode === 404) {
+        return {} as QueueDashboardViewModel
+      }
+      throw err
+    })
   }
 
   // --- 2. Messaging (Tag 2: Messaging) ---
@@ -426,12 +456,17 @@ export class VasClient extends Pave360Client {
 
   // --- 7. Sender IDs (Tag 7: /api/v1/senders) ---
   getSenderIds(): Promise<SenderIdItemViewModel[]> {
-    return this.vasRequest<any>(VAS_PATHS.traffic.senderIds).then((res) => {
-      if (Array.isArray(res)) return res
-      if (res && Array.isArray(res.senders)) return res.senders
-      if (res && Array.isArray(res.data)) return res.data
-      return []
-    })
+    return this.vasRequest<any>(VAS_PATHS.traffic.senderIds)
+      .then((res) => {
+        if (Array.isArray(res)) return res
+        if (res && Array.isArray(res.senders)) return res.senders
+        if (res && Array.isArray(res.data)) return res.data
+        return []
+      })
+      .catch((err: any) => {
+        if (err?.status === 404 || err?.statusCode === 404) return []
+        throw err
+      })
   }
 
   registerSenderId(payload: RegisterSenderRequest): Promise<RegisterSenderResponse> {
@@ -449,12 +484,17 @@ export class VasClient extends Pave360Client {
 
   // --- 4. USSD Gateway (Tag 4: /api/v1/ussd/*) ---
   getUssdSessions(): Promise<UssdSessionItemViewModel[]> {
-    return this.vasRequest<any>(VAS_PATHS.traffic.ussd).then((res) => {
-      if (Array.isArray(res)) return res
-      if (res && Array.isArray(res.sessions)) return res.sessions
-      if (res && Array.isArray(res.data)) return res.data
-      return []
-    })
+    return this.vasRequest<any>(VAS_PATHS.traffic.ussd)
+      .then((res) => {
+        if (Array.isArray(res)) return res
+        if (res && Array.isArray(res.sessions)) return res.sessions
+        if (res && Array.isArray(res.data)) return res.data
+        return []
+      })
+      .catch((err: any) => {
+        if (err?.status === 404 || err?.statusCode === 404) return []
+        throw err
+      })
   }
 
   getUssdSessionDetail(id: string): Promise<UssdSessionItemViewModel> {
@@ -499,11 +539,16 @@ export class VasClient extends Pave360Client {
 
   // --- 5. Administration (Tag 13 & Tag 14) ---
   async getTenants(): Promise<TenantListItemViewModel[]> {
-    const res = await this.vasRequest<any>(VAS_PATHS.admin.tenants)
-    if (Array.isArray(res)) return res
-    if (Array.isArray(res?.items)) return res.items
-    if (Array.isArray(res?.data)) return res.data
-    return []
+    try {
+      const res = await this.vasRequest<any>(VAS_PATHS.admin.tenants)
+      if (Array.isArray(res)) return res
+      if (Array.isArray(res?.items)) return res.items
+      if (Array.isArray(res?.data)) return res.data
+      return []
+    } catch (err: any) {
+      if (err?.status === 404 || err?.statusCode === 404) return []
+      throw err
+    }
   }
 
   getTenant(id: string): Promise<TenantFormViewModel> {
@@ -531,11 +576,16 @@ export class VasClient extends Pave360Client {
   }
 
   async getUsers(): Promise<UserListItemViewModel[]> {
-    const res = await this.vasRequest<any>(VAS_PATHS.admin.users)
-    if (Array.isArray(res)) return res
-    if (Array.isArray(res?.items)) return res.items
-    if (Array.isArray(res?.data)) return res.data
-    return []
+    try {
+      const res = await this.vasRequest<any>(VAS_PATHS.admin.users)
+      if (Array.isArray(res)) return res
+      if (Array.isArray(res?.items)) return res.items
+      if (Array.isArray(res?.data)) return res.data
+      return []
+    } catch (err: any) {
+      if (err?.status === 404 || err?.statusCode === 404) return []
+      throw err
+    }
   }
 
   getUser(id: string): Promise<UserFormViewModel> {
@@ -569,11 +619,16 @@ export class VasClient extends Pave360Client {
   }
 
   async getRoles(): Promise<RoleListItemViewModel[]> {
-    const res = await this.vasRequest<any>(VAS_PATHS.admin.roles)
-    if (Array.isArray(res)) return res
-    if (Array.isArray(res?.items)) return res.items
-    if (Array.isArray(res?.data)) return res.data
-    return []
+    try {
+      const res = await this.vasRequest<any>(VAS_PATHS.admin.roles)
+      if (Array.isArray(res)) return res
+      if (Array.isArray(res?.items)) return res.items
+      if (Array.isArray(res?.data)) return res.data
+      return []
+    } catch (err: any) {
+      if (err?.status === 404 || err?.statusCode === 404) return []
+      throw err
+    }
   }
 
   getRole(id: string): Promise<RoleListItemViewModel> {
@@ -603,23 +658,36 @@ export class VasClient extends Pave360Client {
             .reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {})
         ).toString()
       : ""
-    const res = await this.vasRequest<any>(`${VAS_PATHS.developers.logs}${qs ? `?${qs}` : ""}`)
-    if (res && Array.isArray(res.logs)) return res as ApiLogIndexViewModel
-    if (Array.isArray(res)) {
+    try {
+      const res = await this.vasRequest<any>(`${VAS_PATHS.developers.logs}${qs ? `?${qs}` : ""}`)
+      if (res && Array.isArray(res.logs)) return res as ApiLogIndexViewModel
+      if (Array.isArray(res)) {
+        return {
+          logs: res,
+          totalCount: res.length,
+          page: 1,
+          pageSize: res.length,
+          totalPages: 1,
+        }
+      }
       return {
-        logs: res,
-        totalCount: res.length,
+        logs: [],
+        totalCount: 0,
         page: 1,
-        pageSize: res.length,
+        pageSize: 50,
         totalPages: 1,
       }
-    }
-    return {
-      logs: [],
-      totalCount: 0,
-      page: 1,
-      pageSize: 50,
-      totalPages: 1,
+    } catch (err: any) {
+      if (err?.status === 404 || err?.statusCode === 404) {
+        return {
+          logs: [],
+          totalCount: 0,
+          page: 1,
+          pageSize: 50,
+          totalPages: 1,
+        }
+      }
+      throw err
     }
   }
 
@@ -631,34 +699,52 @@ export class VasClient extends Pave360Client {
             .reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {})
         ).toString()
       : ""
-    const res = await this.vasRequest<any>(`${VAS_PATHS.admin.auditLogs}${qs ? `?${qs}` : ""}`)
-    if (res && Array.isArray(res.items)) return res as AuditLogsResponse
-    if (Array.isArray(res)) {
+    try {
+      const res = await this.vasRequest<any>(`${VAS_PATHS.admin.auditLogs}${qs ? `?${qs}` : ""}`)
+      if (res && Array.isArray(res.items)) return res as AuditLogsResponse
+      if (Array.isArray(res)) {
+        return {
+          items: res,
+          totalCount: res.length,
+          page: 1,
+          pageSize: res.length,
+          totalPages: 1,
+        }
+      }
       return {
-        items: res,
-        totalCount: res.length,
+        items: [],
+        totalCount: 0,
         page: 1,
-        pageSize: res.length,
+        pageSize: 50,
         totalPages: 1,
       }
-    }
-    return {
-      items: [],
-      totalCount: 0,
-      page: 1,
-      pageSize: 50,
-      totalPages: 1,
+    } catch (err: any) {
+      if (err?.status === 404 || err?.statusCode === 404) {
+        return {
+          items: [],
+          totalCount: 0,
+          page: 1,
+          pageSize: 50,
+          totalPages: 1,
+        }
+      }
+      throw err
     }
   }
 
   // --- Tag 16: API Keys ---
   async getApiKeys(): Promise<ApiKeyListItemViewModel[]> {
-    const res = await this.vasRequest<any>(VAS_PATHS.developers.keys)
-    if (Array.isArray(res)) return res
-    if (Array.isArray(res?.items)) return res.items
-    if (Array.isArray(res?.keys)) return res.keys
-    if (Array.isArray(res?.data)) return res.data
-    return []
+    try {
+      const res = await this.vasRequest<any>(VAS_PATHS.developers.keys)
+      if (Array.isArray(res)) return res
+      if (Array.isArray(res?.items)) return res.items
+      if (Array.isArray(res?.keys)) return res.keys
+      if (Array.isArray(res?.data)) return res.data
+      return []
+    } catch (err: any) {
+      if (err?.status === 404 || err?.statusCode === 404) return []
+      throw err
+    }
   }
 
   override createApiKey(payload: string | CreateApiKeyRequest): Promise<any> {
@@ -725,12 +811,17 @@ export class VasClient extends Pave360Client {
 
   // --- 9. Webhooks ---
   async getWebhooks(): Promise<WebhookItemViewModel[]> {
-    const res = await this.vasRequest<any>(VAS_PATHS.developers.webhooks)
-    if (Array.isArray(res)) return res
-    if (Array.isArray(res?.webhooks)) return res.webhooks
-    if (Array.isArray(res?.items)) return res.items
-    if (Array.isArray(res?.data)) return res.data
-    return []
+    try {
+      const res = await this.vasRequest<any>(VAS_PATHS.developers.webhooks)
+      if (Array.isArray(res)) return res
+      if (Array.isArray(res?.webhooks)) return res.webhooks
+      if (Array.isArray(res?.items)) return res.items
+      if (Array.isArray(res?.data)) return res.data
+      return []
+    } catch (err: any) {
+      if (err?.status === 404 || err?.statusCode === 404) return []
+      throw err
+    }
   }
 
   createWebhook(payload: CreateWebhookRequest): Promise<CreateWebhookResponse> {
@@ -754,11 +845,16 @@ export class VasClient extends Pave360Client {
 
   // --- Tag 16: System Settings ---
   async getSystemSettings(): Promise<SystemSettingItemViewModel[]> {
-    const res = await this.vasRequest<any>(VAS_PATHS.settings.system)
-    if (Array.isArray(res)) return res
-    if (Array.isArray(res?.items)) return res.items
-    if (Array.isArray(res?.data)) return res.data
-    return []
+    try {
+      const res = await this.vasRequest<any>(VAS_PATHS.settings.system)
+      if (Array.isArray(res)) return res
+      if (Array.isArray(res?.items)) return res.items
+      if (Array.isArray(res?.data)) return res.data
+      return []
+    } catch (err: any) {
+      if (err?.status === 404 || err?.statusCode === 404) return []
+      throw err
+    }
   }
 
   getSystemSetting(id: string): Promise<SystemSettingItemViewModel> {
@@ -788,7 +884,19 @@ export class VasClient extends Pave360Client {
             .reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {})
         ).toString()
       : ""
-    return this.vasRequest<FinancialReportResponse>(`${VAS_PATHS.reports.financial}${qs ? `?${qs}` : ""}`)
+    return this.vasRequest<FinancialReportResponse>(`${VAS_PATHS.reports.financial}${qs ? `?${qs}` : ""}`).catch(
+      (err: any) => {
+        if (err?.status === 404 || err?.statusCode === 404) {
+          return {
+            totalRevenue: 0,
+            totalCost: 0,
+            netMargin: 0,
+            records: [],
+          } as unknown as FinancialReportResponse
+        }
+        throw err
+      },
+    )
   }
 
   getMessagingReports(params?: ReportQueryParams): Promise<MessagingReportResponse> {
@@ -799,7 +907,19 @@ export class VasClient extends Pave360Client {
             .reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {})
         ).toString()
       : ""
-    return this.vasRequest<MessagingReportResponse>(`${VAS_PATHS.reports.messaging}${qs ? `?${qs}` : ""}`)
+    return this.vasRequest<MessagingReportResponse>(`${VAS_PATHS.reports.messaging}${qs ? `?${qs}` : ""}`).catch(
+      (err: any) => {
+        if (err?.status === 404 || err?.statusCode === 404) {
+          return {
+            totalMessages: 0,
+            delivered: 0,
+            failed: 0,
+            records: [],
+          } as unknown as MessagingReportResponse
+        }
+        throw err
+      },
+    )
   }
 
   getDeliveryReportsAnalytics(params?: ReportQueryParams): Promise<DeliveryReportAnalyticsResponse> {
@@ -810,7 +930,19 @@ export class VasClient extends Pave360Client {
             .reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {})
         ).toString()
       : ""
-    return this.vasRequest<DeliveryReportAnalyticsResponse>(`${VAS_PATHS.reports.delivery}${qs ? `?${qs}` : ""}`)
+    return this.vasRequest<DeliveryReportAnalyticsResponse>(`${VAS_PATHS.reports.delivery}${qs ? `?${qs}` : ""}`).catch(
+      (err: any) => {
+        if (err?.status === 404 || err?.statusCode === 404) {
+          return {
+            totalDelivered: 0,
+            deliveryRate: 0,
+            latencyAvgMs: 0,
+            records: [],
+          } as unknown as DeliveryReportAnalyticsResponse
+        }
+        throw err
+      },
+    )
   }
 
   getBillingReports(params?: ReportQueryParams) {

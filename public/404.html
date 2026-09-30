@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#011b33" />
+    <title>Pave360 VAS Operator</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/images/pave.png" />
+    <link rel="dns-prefetch" href="https://vas.pave360.com" />
+    <link rel="preconnect" href="https://vas.pave360.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+  </head>
+  <body class="auth-light-body selection:bg-[#01b8ec]/20 selection:text-[#011b33] antialiased">
+    <div id="root" class="h-full w-full">
+      <div
+        id="initial-loader"
+        style="position: fixed; inset: 0; background-color: #f3f6fa; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 99999; font-family: 'IBM Plex Sans', -apple-system, sans-serif;"
+      >
+        <div style="width: 36px; height: 36px; border-radius: 50%; border: 3px solid #cbd5e1; border-top-color: #011b33; animation: initial-spin 0.7s linear infinite;"></div>
+        <style>
+          @keyframes initial-spin { to { transform: rotate(360deg); } }
+        </style>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

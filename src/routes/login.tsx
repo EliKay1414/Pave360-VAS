@@ -1,4 +1,4 @@
-﻿import * as React from "react"
+import * as React from "react"
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router"
 import { store } from "../shared/store"
 import { useForm } from "react-hook-form"
@@ -27,28 +27,16 @@ interface OtpFormValues {
 
 function LoginPage() {
   const navigate = useNavigate()
-  const { signedIn, completeLogin, completeOtp, otpPending, loginEmail, switchPersona } = useAuth()
+  const { completeLogin, completeOtp, otpPending, loginEmail, switchPersona } = useAuth()
   const [error, setError] = React.useState("")
   const [loading, setLoading] = React.useState(false)
   const [showPassword, setShowPassword] = React.useState(false)
   const [rememberMe, setRememberMe] = React.useState(true)
 
-  const [formAttempt, setFormAttempt] = React.useState(0)
-  const [initialEmail, setInitialEmail] = React.useState(
-    () => (typeof window !== "undefined" ? localStorage.getItem("pave360_vas_login_email") || "" : "")
-  )
-
   const loginForm = useForm<LoginFormValues>({
     defaultValues: {
-      email: initialEmail,
+      email: "",
       password: "",
-    },
-    values: {
-      email: initialEmail,
-      password: "",
-    },
-    resetOptions: {
-      keepDirtyValues: false,
     },
   })
 
@@ -57,9 +45,6 @@ function LoginPage() {
       otp: "",
     },
   })
-
-  // Auto-redirect is safely guarded by Route.beforeLoad before mounting
-  // so typing into the form never causes sudden navigation.
 
   const onLoginSubmit = async (data: LoginFormValues) => {
     setError("")
@@ -73,9 +58,7 @@ function LoginPage() {
       const res = await completeLogin(data.email, data.password, rememberMe)
       if (!res.ok) {
         setError(res.error)
-        setInitialEmail(data.email.trim())
-        // Remount form key to immediately reset browser credential manager autofill state
-        setFormAttempt((k) => k + 1)
+        loginForm.resetField("password")
         setLoading(false)
         return
       }
@@ -83,7 +66,6 @@ function LoginPage() {
         setLoading(false)
         return
       }
-      // Instant router transition to dashboard without lingering in loading state
       navigate({ to: "/dashboard", replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Unable to sign in. Please verify your credentials.")
@@ -149,7 +131,6 @@ function LoginPage() {
                   </p>
 
                   <form
-                    key={`auth-form-${formAttempt}`}
                     method="post"
                     action="#"
                     name="loginForm"
@@ -166,8 +147,6 @@ function LoginPage() {
                         id="Email"
                         type="email"
                         autoComplete="username"
-                        autoFocus
-                        onFocus={(e) => e.target.select()}
                         placeholder="you@carrier.com"
                         className="telemetry-input-light"
                         {...loginForm.register("email", {
@@ -195,7 +174,7 @@ function LoginPage() {
                           id="authPasswordInput"
                           type={showPassword ? "text" : "password"}
                           autoComplete="current-password"
-                          placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                          placeholder={"\u2022".repeat(12)}
                           className="telemetry-input-light pr-10"
                           {...loginForm.register("password", {
                             required: "The Password field is required.",
@@ -268,7 +247,7 @@ function LoginPage() {
                         {loading && (
                           <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
                         )}
-                        <span>{loading ? "Signing inâ€¦" : "Sign in to gateway"}</span>
+                        <span>{loading ? "Signing in..." : "Sign in to gateway"}</span>
                       </button>
                     </div>
                   </form>
@@ -296,7 +275,7 @@ function LoginPage() {
                         type="text"
                         inputMode="numeric"
                         autoFocus
-                        placeholder="â€¢â€¢â€¢â€¢â€¢â€¢"
+                        placeholder={"\u2022".repeat(6)}
                         className="telemetry-input-light text-center font-mono text-lg font-bold tracking-[0.3em]"
                         {...otpForm.register("otp", {
                           required: "Enter the 6-digit code.",
@@ -322,7 +301,7 @@ function LoginPage() {
                         disabled={loading}
                         className="telemetry-btn-primary-light"
                       >
-                        <span>{loading ? "Verifyingâ€¦" : "Verify and continue"}</span>
+                        <span>{loading ? "Verifying..." : "Verify and continue"}</span>
                       </button>
                     </div>
                   </form>
@@ -353,4 +332,3 @@ function LoginPage() {
     </div>
   )
 }
-

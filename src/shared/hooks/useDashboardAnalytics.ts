@@ -77,8 +77,10 @@ export function useDashboardAnalytics() {
       if (
         error?.status === 401 ||
         error?.status === 403 ||
+        error?.status === 404 ||
         error?.statusCode === 401 ||
-        error?.statusCode === 403
+        error?.statusCode === 403 ||
+        error?.statusCode === 404
       ) {
         return false
       }
