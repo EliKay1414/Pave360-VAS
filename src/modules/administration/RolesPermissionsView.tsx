@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import type { RoleItem } from "./roles/types"
 import {
   RolesHeader,
@@ -65,6 +65,20 @@ export function RolesPermissionsView() {
   const handleOpenEdit = (role: RoleItem) => {
     setEditingRole(role)
   }
+
+  // Check URL query param for direct role linking
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const idParam = params.get("id") || params.get("roleId")
+      if (idParam && !editingRole && roles.length > 0) {
+        const found = roles.find((r) => r.id === idParam || r.name.toLowerCase() === idParam.toLowerCase())
+        if (found) {
+          setEditingRole(found)
+        }
+      }
+    }
+  }, [roles, editingRole])
 
   const handleCloseEdit = () => {
     setEditingRole(null)

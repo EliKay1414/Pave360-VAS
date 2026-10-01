@@ -1,4 +1,4 @@
-﻿import { store } from "../store"
+import { store } from "../store"
 import { vasClient } from "../services/vas/vasClient"
 import {
   setSignedIn,
@@ -186,7 +186,18 @@ export async function checkAuthSession(): Promise<boolean> {
       localStorage.setItem("pave360_vas_user", JSON.stringify(userProfile))
     }
     return true
-  } catch {
+  } catch (err: any) {
+    if (err?.status === 401 || err?.statusCode === 401) {
+      // Backend explicitly rejected the session
+      store.dispatch(setSignedIn(false))
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("pave360_vas_authenticated")
+        localStorage.removeItem("pave360_vas_user")
+        localStorage.removeItem("pave360_access_token")
+      }
+      return false
+    }
+
     // Preserve local session on background verification or network/CORS issues
     const hasLocalSession =
       store.getState().auth.signedIn ||

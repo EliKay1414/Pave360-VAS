@@ -129,6 +129,18 @@ export function ConnectionsView() {
     setIsModalOpen(true)
   }
 
+  // Check URL query param for direct connection linking
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const idParam = params.get("id") || params.get("connectionId")
+    if (idParam && !currentConnection && displayedConnections.length > 0) {
+      const found = displayedConnections.find((c) => c.id === idParam)
+      if (found) {
+        handleOpenEdit(found)
+      }
+    }
+  }, [displayedConnections, currentConnection])
+
   const handleFormSubmit = async (formData: ConnectionFormData) => {
     try {
       if (modalMode === "create") {

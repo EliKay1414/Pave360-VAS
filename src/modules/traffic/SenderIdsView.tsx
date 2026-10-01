@@ -1,8 +1,6 @@
 import * as React from "react"
 import { toast } from "sonner"
-import {
-  SenderIdsHeader,
-} from "./sender-ids/components/SenderIdsHeader"
+import { SenderIdsHeader } from "./sender-ids/components/SenderIdsHeader"
 import {
   SenderIdsTable,
   type SenderIdRecord,
@@ -24,7 +22,16 @@ export { type SenderIdRecord } from "./sender-ids/components/SenderIdsTable"
 
 const INITIAL_SENDERS: SenderIdRecord[] = [
   {
-    id: "pave360",
+    id: "snd_oval_data",
+    senderHeader: "OVAL-DATA",
+    displayName: "OVAL-DATA",
+    type: "Alphanumeric",
+    status: "Approved",
+    country: "GH",
+    notes: "Production telemetry and data dispatches",
+  },
+  {
+    id: "snd_pave360",
     senderHeader: "Pave360",
     displayName: "Pave360 Main",
     type: "Alphanumeric",
@@ -35,17 +42,32 @@ const INITIAL_SENDERS: SenderIdRecord[] = [
 ]
 
 export function SenderIdsView() {
-  const { data: remoteSenders, isLoading, refetch, isFetching } = useSenderIds()
+  const { data: remoteSenders, isLoading } = useSenderIds()
   const registerMutation = useRegisterSenderId()
   const deleteMutation = useDeleteSenderId()
 
   const [localSenders, setLocalSenders] = React.useState<SenderIdRecord[]>(() => {
     try {
       const saved = localStorage.getItem("pave360_vas_sender_ids")
-      if (saved) return JSON.parse(saved)
-    } catch {
-      // Fallback
-    }
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((item: any) => {
+            const header = item.senderHeader || item.senderId || item.header || item.name || "SENDER"
+            return {
+              id: String(item.id || `snd_${header}`),
+              senderHeader: String(header),
+              displayName: String(item.displayName || header),
+              type: item.type || "Alphanumeric",
+              status: item.status || "Approved",
+              country: item.country || "GH",
+              carriers: item.carriers,
+              notes: item.notes || item.purpose || "",
+            }
+          })
+        }
+      }
+    } catch {}
     return INITIAL_SENDERS
   })
 
@@ -53,22 +75,53 @@ export function SenderIdsView() {
   const [isRegisterOpen, setIsRegisterOpen] = React.useState(false)
   const [editingSender, setEditingSender] = React.useState<SenderIdRecord | null>(null)
 
-  // Remote data takes priority; only fallback to local if not live or query failed
+  // Remote data takes priority; merge with seed and local state
   const displayedSenders: SenderIdRecord[] = React.useMemo(() => {
-    if (env.isLive && remoteSenders) {
-      return remoteSenders.map((item) => ({
-        id: item.id || item.senderId,
-        senderHeader: item.senderId,
-        displayName: item.senderId,
+    const listToProcess = (remoteSenders && remoteSenders.length > 0) ? remoteSenders : localSenders
+
+    const mapped: SenderIdRecord[] = (listToProcess || []).map((item: any) => {
+      const header = String(item.senderHeader || item.senderId || item.header || item.name || item.id || "SENDER")
+      return {
+        id: String(item.id || item.senderId || `snd_${header}`),
+        senderHeader: header,
+        displayName:
+          item.displayName ||
+          (header === "Pave360"
+            ? "Pave360 Main"
+            : header === "OVAL-DATA"
+            ? "OVAL-DATA"
+            : header),
         type: item.type || "Alphanumeric",
-        status: item.status || "Pending",
+        status: item.status || "Approved",
         country: item.country || "GH",
         carriers: item.carriers,
-        notes: item.purpose,
-      }))
+        notes: item.notes || item.purpose || "",
+      }
+    })
+
+    // Merge with default seed if missing
+    for (const seed of INITIAL_SENDERS) {
+      const seedHeader = (seed.senderHeader || "").toLowerCase()
+      if (!mapped.some((m) => (m?.senderHeader || "").toLowerCase() === seedHeader)) {
+        mapped.push(seed)
+      }
     }
-    return localSenders
+    return mapped
   }, [remoteSenders, localSenders])
+
+  // Check URL query param for direct sender linking
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const idParam = params.get("id") || params.get("senderId")
+    if (idParam && !editingSender && displayedSenders.length > 0) {
+      const found = displayedSenders.find(
+        (s) => s.id === idParam || (s.senderHeader || "").toLowerCase() === idParam.toLowerCase()
+      )
+      if (found) {
+        setEditingSender(found)
+      }
+    }
+  }, [displayedSenders, editingSender])
 
   const saveLocalSenders = (list: SenderIdRecord[]) => {
     setLocalSenders(list)
@@ -82,29 +135,29 @@ export function SenderIdsView() {
       if (env.isLive) {
         await registerMutation.mutateAsync({
           senderId: formData.senderHeader.trim(),
-          purpose: formData.purpose.trim(),
-          documentUrl: formData.documentUrl.trim(),
+          purpose: formData.notes.trim(),
           type: formData.type,
           country: formData.country,
         })
       }
 
       const newSender: SenderIdRecord = {
-        id: formData.senderHeader.trim().toLowerCase().replace(/[^a-z0-9]/g, "_"),
+        id: `snd_${Date.now()}_${formData.senderHeader.trim().toLowerCase().replace(/[^a-z0-9]/g, "_")}`,
         senderHeader: formData.senderHeader.trim(),
         displayName: formData.displayName.trim() || formData.senderHeader.trim(),
         type: formData.type,
         country: formData.country.trim() || "GH",
-        status: "Pending",
+        status: formData.status || "Approved",
         notes: formData.notes.trim(),
       }
-      saveLocalSenders([...localSenders, newSender])
+
+      saveLocalSenders([newSender, ...displayedSenders])
       recordVasActivity({
         action: "sender_id.register",
         entity: "SenderID",
-        summary: `Sender ID '${formData.senderHeader.trim()}' submitted for regulatory review`,
+        summary: `Sender ID '${formData.senderHeader.trim()}' registered`,
       })
-      toast.success(`Sender ID '${formData.senderHeader.trim()}' submitted successfully`)
+      toast.success(`Sender ID '${formData.senderHeader.trim()}' registered successfully`)
       setIsRegisterOpen(false)
     } catch (err: any) {
       toast.error(err?.message || "Failed to register Sender ID")
@@ -126,7 +179,8 @@ export function SenderIdsView() {
       if (env.isLive) {
         await deleteMutation.mutateAsync(id)
       }
-      saveLocalSenders(displayedSenders.filter((s) => s.id !== id))
+      const filtered = displayedSenders.filter((s) => s.id !== id)
+      saveLocalSenders(filtered)
       recordVasActivity({
         action: "sender_id.delete",
         entity: "SenderID",
@@ -141,15 +195,11 @@ export function SenderIdsView() {
 
   return (
     <div className="space-y-4 font-sans select-none pb-8">
-      <SenderIdsHeader
-        onOpenRegister={() => setIsRegisterOpen(true)}
-        onRefresh={() => refetch()}
-        isFetching={isFetching}
-      />
+      <SenderIdsHeader onOpenRegister={() => setIsRegisterOpen(true)} />
 
       <SenderIdsTable
         senders={displayedSenders}
-        isLoading={env.isLive && isLoading}
+        isLoading={isLoading}
         onEdit={(s) => setEditingSender(s)}
         onDelete={handleDelete}
       />
@@ -171,3 +221,6 @@ export function SenderIdsView() {
     </div>
   )
 }
+
+export const TrafficSenderIdsView = SenderIdsView
+export default SenderIdsView

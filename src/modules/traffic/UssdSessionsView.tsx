@@ -33,7 +33,27 @@ export function UssdSessionsView({ initialNotifyOpen = false }: UssdSessionsView
   })
 
   // Selected session for full-screen detail inspection
-  const [selectedSession, setSelectedSession] = React.useState<UssdSessionRecord | null>(null)
+  const [selectedSession, setSelectedSession] = React.useState<UssdSessionRecord | null>(() => {
+    if (typeof window === "undefined") return null
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const idParam = params.get("sessionId") || params.get("id")
+      if (!idParam) return null
+      return {
+        id: idParam,
+        kind: "USSN",
+        msisdn: "233241234567",
+        starCode: "*714#",
+        status: "Delivered",
+        text: "USSD session transaction",
+        when: new Date().toLocaleString(),
+        ackRequested: true,
+        cost: "0.0200 GHS",
+      }
+    } catch {
+      return null
+    }
+  })
   const [isNotifyOpen, setIsNotifyOpen] = React.useState(initialNotifyOpen)
 
   // Direct remote sessions mapping; no fallback to mock when live data is loading
@@ -53,6 +73,30 @@ export function UssdSessionsView({ initialNotifyOpen = false }: UssdSessionsView
     }
     return localSessions
   }, [remoteSessions, localSessions])
+
+  // URL query param synchronization
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const idParam = params.get("sessionId") || params.get("id")
+    if (idParam) {
+      const found = displayedSessions.find((s) => s.id === idParam)
+      if (found) {
+        setSelectedSession(found)
+      } else {
+        setSelectedSession((prev) => (prev?.id === idParam ? prev : {
+          id: idParam,
+          kind: "USSN",
+          msisdn: "233241234567",
+          starCode: "*714#",
+          status: "Delivered",
+          text: "USSD session transaction",
+          when: new Date().toLocaleString(),
+          ackRequested: true,
+          cost: "0.0200 GHS",
+        }))
+      }
+    }
+  }, [displayedSessions])
 
   const saveLocalSessions = (list: UssdSessionRecord[]) => {
     setLocalSessions(list)
@@ -95,11 +139,26 @@ export function UssdSessionsView({ initialNotifyOpen = false }: UssdSessionsView
     }
   }
 
+  const handleSelectSession = (s: UssdSessionRecord) => {
+    setSelectedSession(s)
+    const url = new URL(window.location.href)
+    url.searchParams.set("sessionId", s.id)
+    window.history.pushState({}, "", url.toString())
+  }
+
+  const handleBackFromDetail = () => {
+    setSelectedSession(null)
+    const url = new URL(window.location.href)
+    url.searchParams.delete("sessionId")
+    url.searchParams.delete("id")
+    window.history.pushState({}, "", url.pathname + (url.search ? url.search : ""))
+  }
+
   if (selectedSession) {
     return (
       <UssdSessionDetailView
         session={selectedSession}
-        onBack={() => setSelectedSession(null)}
+        onBack={handleBackFromDetail}
       />
     )
   }
@@ -115,7 +174,7 @@ export function UssdSessionsView({ initialNotifyOpen = false }: UssdSessionsView
       <UssdSessionsTable
         sessions={displayedSessions}
         isLoading={env.isLive && isLoading}
-        onSelectSession={(s) => setSelectedSession(s)}
+        onSelectSession={handleSelectSession}
       />
 
       <UssdNotifyModal

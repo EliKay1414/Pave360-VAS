@@ -23,6 +23,7 @@ export function Header({ onOpenSidebar }: HeaderProps) {
   // Current active page title
   const activePageTitle = React.useMemo(() => {
     if (pathname === "/dashboard" || pathname === "/") return "Dashboard"
+    if (pathname === "/inbound" || pathname === "/traffic/inbound-mo") return "Inbound SMS"
     if (pathname === "/ussd" || pathname === "/ussd/notify" || pathname === "/traffic/ussd-sessions") return "USSD"
     if (pathname === "/traffic/reports-billing" || pathname === "/reports") return "Reports & Analytics"
     if (pathname === "/operations/alarms" || pathname === "/alerts") return "Alerts"

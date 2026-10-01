@@ -116,6 +116,18 @@ export function RoutingView() {
     setIsModalOpen(true)
   }
 
+  // Check URL query param for direct route linking
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const idParam = params.get("id") || params.get("routeId")
+    if (idParam && !currentRoute && displayedRoutes.length > 0) {
+      const found = displayedRoutes.find((r) => r.id === idParam)
+      if (found) {
+        handleOpenEdit(found)
+      }
+    }
+  }, [displayedRoutes, currentRoute])
+
   const handleFormSubmit = async (formData: RouteFormData) => {
     try {
       if (modalMode === "create") {

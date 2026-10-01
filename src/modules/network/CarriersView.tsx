@@ -103,6 +103,20 @@ export function CarriersView() {
     setIsModalOpen(true)
   }
 
+  // Check URL query param for direct carrier linking
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const idParam = params.get("id") || params.get("carrierId")
+    if (idParam && !currentCarrier && displayedCarriers.length > 0) {
+      const found = displayedCarriers.find(
+        (c) => c.id === idParam || c.code.toLowerCase() === idParam.toLowerCase()
+      )
+      if (found) {
+        handleOpenEdit(found)
+      }
+    }
+  }, [displayedCarriers, currentCarrier])
+
   const handleFormSubmit = async (formData: CarrierFormData) => {
     try {
       if (modalMode === "create") {

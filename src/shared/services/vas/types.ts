@@ -1,7 +1,6 @@
 /**
  * Standard Envelope and Data Types for Pave360 VAS Backend APIs
  */
-
 export interface VasApiResponse<T = unknown> {
   success: boolean
   data: T
@@ -564,6 +563,8 @@ export interface DeliveryReportsApiResponse {
 }
 
 export interface ReportQueryParams {
+  from?: string
+  to?: string
   fromDate?: string
   toDate?: string
   tenantId?: string
@@ -574,12 +575,29 @@ export interface ReportQueryParams {
 }
 
 export interface MessagingReportResponse {
+  from?: string
+  to?: string
+  total?: number
   totalMessages: number
   delivered: number
   failed: number
   pending: number
   successRate: number
   segments: number
+  byDay?: {
+    date: string
+    delivered: number
+    failed: number
+    total: number
+  }[]
+  byStatus?: {
+    status: string
+    count: number
+  }[]
+  byCarrier?: {
+    carrier: string
+    count: number
+  }[]
   dailyBreakdown?: {
     date: string
     delivered: number
@@ -589,6 +607,17 @@ export interface MessagingReportResponse {
 }
 
 export interface DeliveryReportAnalyticsResponse {
+  from?: string
+  to?: string
+  deliveredCount?: number
+  avgLatencySeconds?: number
+  p95LatencySeconds?: number
+  byCarrier?: {
+    carrier?: string
+    delivered?: number
+    avgLatencySeconds?: number
+    p95LatencySeconds?: number
+  }[]
   totalDlrReceived: number
   avgLatencyMs: number
   carrierBreakdown?: {
@@ -603,6 +632,20 @@ export interface DeliveryReportAnalyticsResponse {
 }
 
 export interface FinancialReportResponse {
+  from?: string
+  to?: string
+  totalSegments?: number
+  totalAmount?: number
+  byStatus?: {
+    status?: string
+    count?: number
+    amount?: number
+  }[]
+  byDay?: {
+    date?: string
+    segments?: number
+    amount?: number
+  }[]
   summary?: {
     totalBilled: number
     prepaidUsage: number
@@ -854,8 +897,3 @@ export interface CreateApiKeyResponse {
 
 // Backward-compat alias
 export type ApiKeyItemViewModel = ApiKeyListItemViewModel
-
-
-
-
-

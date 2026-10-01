@@ -23,17 +23,39 @@ export function DeliveryReportsView() {
     query: submittedQuery ? submittedQuery : undefined,
   })
 
-  // Selected report for Message Detail View
-  const [selectedReport, setSelectedReport] = React.useState<DeliveryReportRecord | null>(null)
+  // Selected report for Message Detail View - initialized synchronously from URL query param
+  const [selectedReport, setSelectedReport] = React.useState<DeliveryReportRecord | null>(() => {
+    if (typeof window === "undefined") return null
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const idParam = params.get("messageId") || params.get("id")
+      if (!idParam) return null
+      const found = INITIAL_REPORTS.find((r) => r.id === idParam || r.carrierMsgId === idParam)
+      return (
+        found || {
+          id: idParam,
+          tenant: "Pave360",
+          carrier: "AT Ghana SMSC",
+          carrierMsgId: idParam,
+          status: "Delivered",
+          error: "000",
+          latency: "0 ms",
+          received: "Just now",
+        }
+      )
+    } catch {
+      return null
+    }
+  })
 
   // Map live API records with fallback to INITIAL_REPORTS
   const allReports: DeliveryReportRecord[] = React.useMemo(() => {
     if (env.isLive && liveReports && liveReports.length > 0) {
-      return liveReports.map((r) => ({
+      return liveReports.map((r: any) => ({
         id: r.messageId || r.id,
         tenant: r.tenant || r.tenantName || "Pave360",
         carrier: r.carrier || r.carrierName || "AT Ghana SMSC",
-        carrierMsgId: r.carrierMsgId || r.id,
+        carrierMsgId: r.carrierMsgId || r.carrierMessageId || r.id,
         status: r.status || "Delivered",
         error: r.error || r.errorCode || "000",
         latency: r.latency || (r.latencyMs !== undefined ? `${r.latencyMs} ms` : "0 ms"),
@@ -80,7 +102,7 @@ export function DeliveryReportsView() {
       if (found) {
         setSelectedReport(found)
       } else {
-        setSelectedReport({
+        setSelectedReport((prev) => (prev?.id === idParam ? prev : {
           id: idParam,
           tenant: "Pave360",
           carrier: "AT Ghana SMSC",
@@ -89,7 +111,7 @@ export function DeliveryReportsView() {
           error: "000",
           latency: "0 ms",
           received: "Just now",
-        })
+        }))
       }
     }
   }, [allReports])

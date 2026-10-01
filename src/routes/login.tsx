@@ -6,9 +6,7 @@ import { useAuth } from "../shared/hooks/useAuth"
 
 export const Route = createFileRoute("/login")({
   beforeLoad: () => {
-    const isAuth =
-      store.getState().auth.signedIn ||
-      (typeof window !== "undefined" && localStorage.getItem("pave360_vas_authenticated") === "true")
+    const isAuth = store.getState().auth.signedIn
     if (isAuth) {
       throw redirect({ to: "/dashboard" })
     }

@@ -17,79 +17,100 @@ export const EditSenderModal: React.FC<EditSenderModalProps> = ({
   onSubmit,
   onDelete,
 }) => {
-  const [form, setForm] = React.useState<SenderIdRecord | null>(sender)
+  const [senderHeader, setSenderHeader] = React.useState("")
+  const [displayName, setDisplayName] = React.useState("")
+  const [type, setType] = React.useState("Alphanumeric")
+  const [country, setCountry] = React.useState("GH")
+  const [status, setStatus] = React.useState("Approved")
+  const [notes, setNotes] = React.useState("")
 
   React.useEffect(() => {
-    setForm(sender)
+    if (sender) {
+      setSenderHeader(sender.senderHeader)
+      setDisplayName(sender.displayName)
+      setType(sender.type)
+      setCountry(sender.country || "GH")
+      setStatus(sender.status)
+      setNotes(sender.notes || "")
+    }
   }, [sender])
 
-  if (!isOpen || !form) return null
+  if (!isOpen || !sender) return null
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.senderHeader.trim()) return
-    onSubmit(form)
+    if (!senderHeader.trim()) return
+    onSubmit({
+      ...sender,
+      senderHeader: senderHeader.trim(),
+      displayName: displayName.trim() || senderHeader.trim(),
+      type,
+      country: country.trim() || "GH",
+      status,
+      notes: notes.trim(),
+    })
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-[1px] animate-in fade-in-0 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in-0 duration-150 font-sans">
       <div
-        className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden flex flex-col"
+        className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col"
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-center justify-between px-6 pt-5 pb-3">
-          <h2 className="text-lg font-bold text-slate-900 tracking-tight">Edit sender ID</h2>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h2 className="text-base font-bold text-[#0c1a2e]">Edit Sender ID</h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-2 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="edit-header">
-                Sender Header
-              </label>
-              <input
-                id="edit-header"
-                type="text"
-                required
-                value={form.senderHeader}
-                onChange={(e) => setForm({ ...form, senderHeader: e.target.value })}
-                className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#005944]/20 focus:border-[#005944]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="edit-display">
-                Display Name
-              </label>
-              <input
-                id="edit-display"
-                type="text"
-                value={form.displayName}
-                onChange={(e) => setForm({ ...form, displayName: e.target.value })}
-                className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#005944]/20 focus:border-[#005944]"
-              />
-            </div>
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Sender ID */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-800 mb-1">
+              Sender ID
+            </label>
+            <input
+              type="text"
+              required
+              maxLength={11}
+              value={senderHeader}
+              onChange={(e) => setSenderHeader(e.target.value)}
+              className="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:border-[#0b4d3c] focus:ring-1 focus:ring-[#0b4d3c]"
+            />
           </div>
 
+          {/* Display Name */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-800 mb-1">
+              Display Name
+            </label>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:border-[#0b4d3c] focus:ring-1 focus:ring-[#0b4d3c]"
+            />
+          </div>
+
+          {/* Type & Country Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="edit-type">
+              <label className="block text-xs font-semibold text-slate-800 mb-1">
                 Type
               </label>
               <select
-                id="edit-type"
-                value={form.type}
-                onChange={(e) => setForm({ ...form, type: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#005944]/20 focus:border-[#005944]"
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:border-[#0b4d3c] focus:ring-1 focus:ring-[#0b4d3c]"
               >
                 <option value="Alphanumeric">Alphanumeric</option>
                 <option value="Shortcode">Shortcode</option>
@@ -98,57 +119,70 @@ export const EditSenderModal: React.FC<EditSenderModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="edit-status">
-                Status
+              <label className="block text-xs font-semibold text-slate-800 mb-1">
+                Country
               </label>
-              <select
-                id="edit-status"
-                value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#005944]/20 focus:border-[#005944]"
-              >
-                <option value="Approved">Approved</option>
-                <option value="Pending">Pending</option>
-                <option value="Rejected">Rejected</option>
-              </select>
+              <input
+                type="text"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                className="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:border-[#0b4d3c] focus:ring-1 focus:ring-[#0b4d3c]"
+              />
             </div>
           </div>
 
+          {/* Status */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="edit-notes">
+            <label className="block text-xs font-semibold text-slate-800 mb-1">
+              Status
+            </label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:border-[#0b4d3c] focus:ring-1 focus:ring-[#0b4d3c]"
+            >
+              <option value="Approved">Approved</option>
+              <option value="Pending">Pending</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-800 mb-1">
               Notes
             </label>
             <textarea
-              id="edit-notes"
-              rows={2}
-              value={form.notes || ""}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#005944]/20 focus:border-[#005944]"
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:border-[#0b4d3c] focus:ring-1 focus:ring-[#0b4d3c]"
             />
           </div>
 
-          <div className="flex items-center justify-between pt-3 pb-4 border-t border-slate-100">
+          {/* Footer Actions */}
+          <div className="flex items-center justify-between pt-3 border-t border-slate-100">
             <button
               type="button"
-              onClick={() => onDelete(form.id)}
-              className="px-3.5 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+              onClick={() => onDelete(sender.id)}
+              className="px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-50 transition-colors cursor-pointer"
             >
-              Delete
+              Delete Sender
             </button>
 
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors cursor-pointer"
+                className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-[#005944] hover:bg-[#004837] text-white text-sm font-semibold rounded-lg shadow-xs transition-colors cursor-pointer"
+                className="px-5 py-2 bg-[#0b4d3c] hover:bg-[#083a2d] text-white text-xs font-semibold rounded-lg shadow-xs transition-colors cursor-pointer"
               >
-                Save changes
+                Save Changes
               </button>
             </div>
           </div>
@@ -157,3 +191,5 @@ export const EditSenderModal: React.FC<EditSenderModalProps> = ({
     </div>
   )
 }
+
+export default EditSenderModal

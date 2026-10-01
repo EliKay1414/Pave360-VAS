@@ -1,7 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
+import { SenderIdsView } from "../../modules/traffic/SenderIdsView"
 
 export const Route = createFileRoute("/_dashboard/senders")({
-  beforeLoad: () => {
-    throw redirect({ to: "/traffic/sender-ids" })
-  },
+  validateSearch: (search: Record<string, unknown>) => search,
+  component: SenderIdsView,
 })
+

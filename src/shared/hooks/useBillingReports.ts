@@ -13,9 +13,17 @@ import { QUERY_CONFIG, stopPollingOnAuthError } from "../lib/queryClient"
 export function useBillingReports(params?: ReportQueryParams) {
   const signedIn = useAppSelector((state) => state.auth.signedIn)
 
+  const from = params?.from || params?.fromDate
+  const to = params?.to || params?.toDate
+  const normalizedParams: ReportQueryParams = {
+    ...params,
+    from,
+    to,
+  }
+
   const financialQuery = useQuery<FinancialReportResponse>({
-    queryKey: ["vas", "reports", "financial", params?.fromDate, params?.toDate, params?.tenantId, params?.type],
-    queryFn: () => vasClient.getFinancialReports(params),
+    queryKey: ["vas", "reports", "financial", from, to, params?.tenantId, params?.type],
+    queryFn: () => vasClient.getFinancialReports(normalizedParams),
     enabled: env.isLive && signedIn,
     staleTime: QUERY_CONFIG.reports.staleTime,
     gcTime: QUERY_CONFIG.reports.gcTime,
@@ -23,8 +31,8 @@ export function useBillingReports(params?: ReportQueryParams) {
   })
 
   const telemetryQuery = useQuery<DeliveryReportAnalyticsResponse>({
-    queryKey: ["vas", "reports", "delivery", params?.fromDate, params?.toDate, params?.carrierId],
-    queryFn: () => vasClient.getDeliveryReportsAnalytics(params),
+    queryKey: ["vas", "reports", "delivery", from, to, params?.carrierId],
+    queryFn: () => vasClient.getDeliveryReportsAnalytics(normalizedParams),
     enabled: env.isLive && signedIn,
     staleTime: QUERY_CONFIG.reports.staleTime,
     gcTime: QUERY_CONFIG.reports.gcTime,
@@ -32,8 +40,8 @@ export function useBillingReports(params?: ReportQueryParams) {
   })
 
   const messagingQuery = useQuery<MessagingReportResponse>({
-    queryKey: ["vas", "reports", "messaging", params?.fromDate, params?.toDate, params?.tenantId],
-    queryFn: () => vasClient.getMessagingReports(params),
+    queryKey: ["vas", "reports", "messaging", from, to, params?.tenantId],
+    queryFn: () => vasClient.getMessagingReports(normalizedParams),
     enabled: env.isLive && signedIn,
     staleTime: QUERY_CONFIG.reports.staleTime,
     gcTime: QUERY_CONFIG.reports.gcTime,
@@ -44,8 +52,8 @@ export function useBillingReports(params?: ReportQueryParams) {
     financial: financialQuery.data,
     telemetry: telemetryQuery.data,
     messaging: messagingQuery.data,
-    isLoading: financialQuery.isLoading || telemetryQuery.isLoading,
-    isFetching: financialQuery.isFetching || telemetryQuery.isFetching,
+    isLoading: financialQuery.isLoading || telemetryQuery.isLoading || messagingQuery.isLoading,
+    isFetching: financialQuery.isFetching || telemetryQuery.isFetching || messagingQuery.isFetching,
     refetch: () => {
       financialQuery.refetch()
       telemetryQuery.refetch()

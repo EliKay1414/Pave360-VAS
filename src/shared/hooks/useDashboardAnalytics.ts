@@ -73,19 +73,7 @@ export function useDashboardAnalytics() {
     staleTime: QUERY_CONFIG.realtime.staleTime,
     gcTime: QUERY_CONFIG.realtime.gcTime,
     refetchInterval: stopPollingOnAuthError(QUERY_CONFIG.realtime.refetchInterval),
-    retry: (failureCount, error: any) => {
-      if (
-        error?.status === 401 ||
-        error?.status === 403 ||
-        error?.status === 404 ||
-        error?.statusCode === 401 ||
-        error?.statusCode === 403 ||
-        error?.statusCode === 404
-      ) {
-        return false
-      }
-      return failureCount < 1
-    },
+    retry: false,
   })
 
   const isLive = Boolean(query.data && !query.isError)

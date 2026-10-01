@@ -66,17 +66,7 @@ export function useMessagingTraffic(params: UseMessagingTrafficParams = {}) {
     staleTime: QUERY_CONFIG.traffic.staleTime,
     gcTime: QUERY_CONFIG.traffic.gcTime,
     refetchInterval: stopPollingOnAuthError(QUERY_CONFIG.traffic.refetchInterval),
-    retry: (failureCount, error: any) => {
-      if (
-        error?.status === 401 ||
-        error?.status === 403 ||
-        error?.statusCode === 401 ||
-        error?.statusCode === 403
-      ) {
-        return false
-      }
-      return failureCount < 1
-    },
+    retry: false,
   })
 
   return {
@@ -96,7 +86,10 @@ export function useMessageDetail(id: string | null) {
     queryKey: ["vas", "message-detail", id],
     queryFn: () => (id ? vasClient.getMessageDetail(id) : null),
     enabled: Boolean(id && env.isLive && signedIn),
-    staleTime: 30000,
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     retry: false,
   })
 }

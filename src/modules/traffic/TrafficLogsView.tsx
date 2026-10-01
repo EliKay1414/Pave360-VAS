@@ -1,4 +1,4 @@
-﻿import * as React from "react"
+import * as React from "react"
 import { MessageDetailView } from "./MessageDetailView"
 import { useMessagingTraffic } from "../../shared/hooks/useMessagingTraffic"
 import {
@@ -34,9 +34,29 @@ export function TrafficLogsView() {
   const [categoryFilter, setCategoryFilter] = React.useState<string>("All Categories")
   const [destinationFilter, setDestinationFilter] = React.useState<string>("")
   const [submittedDestination, setSubmittedDestination] = React.useState<string>("")
-
   const [isRefreshing, setIsRefreshing] = React.useState(false)
-  const [selectedMessage, setSelectedMessage] = React.useState<MessageTrafficLog | null>(null)
+
+  const [selectedMessage, setSelectedMessage] = React.useState<MessageTrafficLog | null>(() => {
+    if (typeof window === "undefined") return null
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const idParam = params.get("messageId") || params.get("id")
+      if (!idParam) return null
+      return {
+        id: idParam,
+        category: "Normal",
+        from: "Pave360",
+        to: "233248985021",
+        status: "Delivered",
+        encoding: "Gsm7",
+        segments: 1,
+        carrier: "AT Ghana SMSC",
+        createdUtc: "2026-09-24 13:28:51Z",
+      }
+    } catch {
+      return null
+    }
+  })
 
   const { logs: liveLogs, isLive, refetch } = useMessagingTraffic({
     status: statusFilter,
@@ -78,7 +98,7 @@ export function TrafficLogsView() {
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const idParam = params.get("messageId") || params.get("id")
-    if (idParam) {
+    if (idParam && !selectedMessage) {
       const found = logs.find((l: MessageTrafficLog) => l.id === idParam)
       setSelectedMessage(
         found || {

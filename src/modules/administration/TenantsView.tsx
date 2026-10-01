@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import type { Tenant, TenantFormData, TenantStatus } from "./tenants/types"
 import {
   TenantsHeader,
@@ -84,6 +84,18 @@ export function TenantsView() {
     setEditingTenant(tenant)
     setIsModalOpen(true)
   }
+
+  // Check URL query param for direct tenant linking
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const idParam = params.get("id") || params.get("tenantId")
+    if (idParam && !editingTenant && tenants.length > 0) {
+      const found = tenants.find((t) => t.id === idParam || t.slug.toLowerCase() === idParam.toLowerCase())
+      if (found) {
+        handleOpenEdit(found)
+      }
+    }
+  }, [tenants, editingTenant])
 
   const handleSaveTenant = async (formData: TenantFormData) => {
     if (editingTenant) {

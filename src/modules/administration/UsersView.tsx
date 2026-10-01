@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import type { UserItem, UserFormData, UserStatus } from "./users/types"
 import {
   UsersHeader,
@@ -97,6 +97,20 @@ export function UsersView() {
   const handleOpenView = (user: UserItem) => {
     setViewingUser(user)
   }
+
+  // Direct deep link query param synchronization
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const idParam = params.get("id") || params.get("userId")
+      if (idParam && !viewingUser && users.length > 0) {
+        const found = users.find((u) => u.id === idParam || u.email.toLowerCase() === idParam.toLowerCase())
+        if (found) {
+          setViewingUser(found)
+        }
+      }
+    }
+  }, [users, viewingUser])
 
   const handleToggleStatus = async (userId: string) => {
     if (env.isLive && signedIn) {
