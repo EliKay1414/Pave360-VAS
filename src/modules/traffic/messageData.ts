@@ -556,7 +556,7 @@ export function resolveMessageRecord(
   }
 
   // Resolve or synthesize delivery reports
-  let dlrReports = input.dlrReports || seed.dlrReports
+  let dlrReports = safeInput.dlrReports || seed.dlrReports
   if (!dlrReports || dlrReports.length === 0) {
     if (status === "Delivered" || status === "Processed") {
       const baseDate = new Date(createdUtc.replace(" ", "T") + "Z")
